@@ -22,7 +22,7 @@ set -Eeuo pipefail
 [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh"
 
 APP_ROOT="${APP_ROOT:-/var/www/vhosts/liratsu.fr/app}"
-REPO="${REPO:-git@github.com:CHANGE_ME/liratsu-site.git}"
+REPO="${REPO:-git@github.com:WavesOfNight/liratsu.git}"
 BRANCH="${1:-main}"
 KEEP=5
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:3000/api/site/health}"

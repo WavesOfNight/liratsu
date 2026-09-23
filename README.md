@@ -158,7 +158,8 @@ E2E_STRIPE=1 npm run test:e2e -- checkout
 ## 5. Déploiement sur Plesk / IONOS (100 % SSH)
 
 Hypothèses : serveur IONOS avec Plesk Obsidian, domaine `liratsu.fr` déjà créé dans Plesk, accès SSH root
-(ou sudo). Remplacer les valeurs `CHANGE_ME`. Les commandes `plesk bin …` peuvent varier selon la
+(ou sudo). Dépôt : `git@github.com:WavesOfNight/liratsu.git`. Il reste une valeur `CHANGE_ME` à
+remplacer (l'email pour le certificat SSL, § 5.4). Les commandes `plesk bin …` peuvent varier selon la
 version : en cas de doute, `plesk bin <utilitaire> --help`.
 
 ### 5.1 Paquets système
@@ -205,8 +206,8 @@ ssh-keygen -t ed25519 -N '' -f ~/.ssh/liratsu_deploy && cat ~/.ssh/liratsu_deplo
 printf 'Host github.com\n  IdentityFile ~/.ssh/liratsu_deploy\n' >> ~/.ssh/config
 
 # Récupération du script puis premier déploiement (clone, npm ci, migrations, build, PM2)
-git clone --depth 1 git@github.com:CHANGE_ME/liratsu-site.git /tmp/liratsu && cp /tmp/liratsu/deploy/*.sh $APP/ && chmod +x $APP/*.sh
-REPO=git@github.com:CHANGE_ME/liratsu-site.git $APP/deploy.sh main
+git clone --depth 1 git@github.com:WavesOfNight/liratsu.git /tmp/liratsu && cp /tmp/liratsu/deploy/*.sh $APP/ && chmod +x $APP/*.sh
+REPO=git@github.com:WavesOfNight/liratsu.git $APP/deploy.sh main
 
 # Contenus initiaux (une seule fois) — affiche les identifiants admin
 cd $APP/current && npm run seed
@@ -331,7 +332,6 @@ précédente est remise en service (et la base restaurée si des migrations avai
 
 ## Informations encore nécessaires
 
-- Adresse du dépôt Git de production et accès SSH au serveur IONOS (utilisateur du domaine).
 - URL de la chaîne YouTube + ID de chaîne (UC…), à saisir dans l'admin.
 - Clés Twitch (Client ID/Secret), Stripe (test + live), PayPal (sandbox + live), Gelato, SMTP : à saisir dans l'admin.
 - Informations légales de Reads Records, médiateur de la consommation, coordonnées IONOS vérifiées (voir `LEGAL_TODO.md`).
