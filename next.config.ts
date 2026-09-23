@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   images: {
     formats: ['image/avif', 'image/webp'],
-    localPatterns: [{ pathname: '/api/media/file/**' }, { pathname: '/img/**' }],
+    localPatterns: [{ pathname: '/api/media/file/**' }, { pathname: '/api/fanarts/file/**' }, { pathname: '/img/**' }],
     remotePatterns: [
       { protocol: 'https', hostname: 'static-cdn.jtvnw.net' },
       { protocol: 'https', hostname: 'clips-media-assets2.twitch.tv' },

@@ -1,0 +1,120 @@
+.memberBar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+.memberAvatar {
+  border-radius: 50%;
+  border: 2px solid #fff;
+}
+.announcements {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.downloads {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.downloads li {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.dlPreview {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 3px solid #fff;
+  box-shadow: var(--shadow-soft);
+}
+.locked .dlPreview {
+  filter: blur(8px) saturate(0.6);
+}
+.formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.fanarts {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
+}
+.fanarts li {
+  display: grid;
+  gap: 6px;
+  padding: 8px 8px 12px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: var(--shadow-soft);
+  color: #1b2240;
+  font-size: 0.9rem;
+}
+.fanarts li:nth-child(odd) {
+  transform: rotate(-1.5deg);
+}
+.fanarts li:nth-child(even) {
+  transform: rotate(1.2deg);
+}
+.fanarts li a {
+  color: #1558b8;
+}
+.fanarts img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.details summary {
+  list-style: none;
+  width: fit-content;
+}
+.details summary::-webkit-details-marker {
+  display: none;
+}
+.guestbook {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+.guestbook li {
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px dashed rgba(63, 169, 245, 0.6);
+}
+:global(:root[data-theme='dark']) .guestbook li {
+  background: rgba(255, 255, 255, 0.05);
+}
+.guestbook p {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+.gbHead {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.reply {
+  font-style: italic;
+  color: var(--link);
+}

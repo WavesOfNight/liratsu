@@ -221,12 +221,20 @@ log('Codes promo de test')
 // ---- Communauté & surprises ----------------------------------------------------
 let wallpaper = (await findOne('downloads', { title: { equals: 'Fond d’écran Liratsu (démo)' } }))?.id
 if (!wallpaper) {
+  const file = await payload.create({ collection: 'protected-files', data: { label: 'Fond démo' }, filePath: path.resolve('public/img/liratsu-avatar.png') })
   wallpaper = (
     await payload.create({
       collection: 'downloads',
-      data: { title: 'Fond d’écran Liratsu (démo)', kind: 'wallpaper', preview: avatarId, files: [{ format: 'phone', file: avatarId }], locked: true },
+      data: { title: 'Fond d’écran Liratsu (démo)', kind: 'wallpaper', preview: avatarId, files: [{ format: 'phone', file: file.id }], locked: true },
     })
   ).id
+}
+{
+  const dl = await payload.findByID({ collection: 'downloads', id: wallpaper, depth: 0 })
+  if (!dl.files?.length) {
+    const file = await payload.create({ collection: 'protected-files', data: { label: 'Fond démo' }, filePath: path.resolve('public/img/liratsu-avatar.png') })
+    await payload.update({ collection: 'downloads', id: wallpaper, data: { files: [{ format: 'phone', file: file.id }] } })
+  }
 }
 const codes = [
   { code: 'BULLE-DEMO', source: 'live' as const, message: 'Code donné en live : bravo !' },

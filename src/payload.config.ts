@@ -7,7 +7,7 @@ import sharp from 'sharp'
 import { fr } from '@payloadcms/translations/languages/fr'
 
 import { ActivityLog, GameSessions, Scores } from './collections/Arcade'
-import { Announcements, Downloads, Fanarts, Guestbook, Members, NotifySignups, PollVotes, Polls, SurpriseCodes } from './collections/Community'
+import { Announcements, Downloads, Fanarts, Guestbook, Members, NotifySignups, PollVotes, Polls, ProtectedFiles, SurpriseCodes } from './collections/Community'
 import { LegalPages } from './collections/LegalPages'
 import { Media } from './collections/Media'
 import { Categories, Coupons, Customers, Orders, Products, ShippingZones, WebhookEvents } from './collections/Shop'
@@ -43,6 +43,7 @@ const { collections, globals } = withActivityLog(
     PollVotes,
     Announcements,
     Downloads,
+    ProtectedFiles,
     SurpriseCodes,
     NotifySignups,
     Members,

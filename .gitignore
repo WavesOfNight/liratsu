@@ -56,3 +56,5 @@ node_modules/
 
 *.tsbuildinfo
 /.claude/settings.local.json
+/protected-files
+/fanarts

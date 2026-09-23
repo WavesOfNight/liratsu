@@ -50,12 +50,17 @@ export const Fanarts: CollectionConfig = {
   admin: { group: 'Communauté', useAsTitle: 'title', defaultColumns: ['title', 'artist', 'status', 'createdAt'] },
   access: { read: approvedOrModerator, create: isModerator, update: isModerator, delete: isModerator },
   hooks: { afterChange: [revalidateCollection] },
+  // Le fichier n'est servi publiquement qu'une fois le fanart approuvé (règle read ci-dessus).
+  upload: {
+    mimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+    imageSizes: [{ name: 'thumb', width: 480, height: 480, position: 'centre' }],
+    adminThumbnail: 'thumb',
+  },
   fields: [
     moderationStatus,
     { name: 'title', label: 'Titre', type: 'text', required: true, maxLength: 80 },
     { name: 'artist', label: 'Artiste', type: 'text', required: true, maxLength: 40 },
     { name: 'artistLink', label: 'Lien de l’artiste', type: 'text' },
-    { name: 'image', type: 'upload', relationTo: 'media', required: true },
     {
       name: 'licenseAccepted',
       label: 'Licence d’affichage accordée par l’auteur (retrait sur simple demande)',
@@ -156,7 +161,7 @@ export const Downloads: CollectionConfig = {
                 { label: 'Archive', value: 'zip' },
               ],
             },
-            { name: 'file', type: 'upload', relationTo: 'media', required: true },
+            { name: 'file', type: 'upload', relationTo: 'protected-files', required: true },
           ],
         },
       ],
@@ -227,4 +232,19 @@ export const Members: CollectionConfig = {
     { name: 'banned', label: 'Banni', type: 'checkbox' },
     { name: 'unlockedCodes', type: 'relationship', relationTo: 'surprise-codes', hasMany: true },
   ],
+}
+
+/**
+ * Fichiers téléchargeables (fonds d'écran, packs…). Jamais servis directement :
+ * le téléchargement passe par /api/site/download qui vérifie le déblocage éventuel.
+ */
+export const ProtectedFiles: CollectionConfig = {
+  slug: 'protected-files',
+  labels: { singular: 'Fichier protégé', plural: 'Fichiers téléchargeables' },
+  admin: { group: 'Communauté', useAsTitle: 'filename' },
+  access: { read: isStaff, create: isStaff, update: isStaff, delete: isStaff },
+  upload: {
+    mimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/zip'],
+  },
+  fields: [{ name: 'label', type: 'text' }],
 }

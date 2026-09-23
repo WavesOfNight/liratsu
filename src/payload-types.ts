@@ -81,6 +81,7 @@ export interface Config {
     'poll-votes': PollVote;
     announcements: Announcement;
     downloads: Download;
+    'protected-files': ProtectedFile;
     'surprise-codes': SurpriseCode;
     'notify-signups': NotifySignup;
     members: Member;
@@ -110,6 +111,7 @@ export interface Config {
     'poll-votes': PollVotesSelect<false> | PollVotesSelect<true>;
     announcements: AnnouncementsSelect<false> | AnnouncementsSelect<true>;
     downloads: DownloadsSelect<false> | DownloadsSelect<true>;
+    'protected-files': ProtectedFilesSelect<false> | ProtectedFilesSelect<true>;
     'surprise-codes': SurpriseCodesSelect<false> | SurpriseCodesSelect<true>;
     'notify-signups': NotifySignupsSelect<false> | NotifySignupsSelect<true>;
     members: MembersSelect<false> | MembersSelect<true>;
@@ -510,11 +512,29 @@ export interface Fanart {
   title: string;
   artist: string;
   artistLink?: string | null;
-  image: number | Media;
   licenseAccepted: boolean;
   contactEmail?: string | null;
   updatedAt: string;
   createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumb?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -586,13 +606,32 @@ export interface Download {
   files?:
     | {
         format: 'phone' | 'tablet' | 'desktop' | 'zip';
-        file: number | Media;
+        file: number | ProtectedFile;
         id?: string | null;
       }[]
     | null;
   locked?: boolean | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "protected-files".
+ */
+export interface ProtectedFile {
+  id: number;
+  label?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -808,6 +847,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'downloads';
         value: number | Download;
+      } | null)
+    | ({
+        relationTo: 'protected-files';
+        value: number | ProtectedFile;
       } | null)
     | ({
         relationTo: 'surprise-codes';
@@ -1176,11 +1219,33 @@ export interface FanartsSelect<T extends boolean = true> {
   title?: T;
   artist?: T;
   artistLink?: T;
-  image?: T;
   licenseAccepted?: T;
   contactEmail?: T;
   updatedAt?: T;
   createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumb?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1241,6 +1306,24 @@ export interface DownloadsSelect<T extends boolean = true> {
   locked?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "protected-files_select".
+ */
+export interface ProtectedFilesSelect<T extends boolean = true> {
+  label?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
