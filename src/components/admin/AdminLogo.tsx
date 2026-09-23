@@ -4,7 +4,6 @@ import React from 'react'
 export function AdminLogo() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <img src="/favicon.svg" alt="" width={48} height={48} />
       <span
         style={{
           fontFamily: 'Fredoka, system-ui, sans-serif',

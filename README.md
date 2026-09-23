@@ -88,6 +88,20 @@ Elles sont déclarées via `next/font/local` (`src/lib/fonts.ts`, `font-display:
    Supprimer les produits/codes `[TEST]` avant l'ouverture.
 6. **Réglages > Thème** : palette, bulles, poissons, sons, curseurs · **Réglages > Easter eggs**.
 
+### Modération (livre d’or et fanarts)
+
+- **File « 🛡️ Modération »** (en haut du menu de l’admin, avec le nombre d’éléments en attente) :
+  aperçu des images (fond en damier pour repérer les transparences, agrandissement au clic),
+  alertes du filtre surlignées, **Valider / Refuser avec motif / Supprimer**, un par un ou par lot,
+  historique des décisions (qui, quand, motif). Rien n’est publié avant validation.
+- **Filtre automatique** (Communauté › Réglages de modération) : insultes et propos haineux (y compris
+  écrits « s4l0p3 », « p.u.t.e », « connnnard »), liens hors domaines autorisés, emails et téléphones,
+  spam. Les messages interdits sont **refusés** avec une explication ; les douteux sont **signalés**
+  (⚠️) aux modérateurs. Listes de mots bloqués / surveillés modifiables.
+- **Fanarts** : métadonnées EXIF (position GPS, appareil) supprimées à l’envoi, doublons détectés
+  (même redimensionnés ou convertis), email à l’artiste lors de la décision, email aux modérateurs à
+  chaque nouvel envoi.
+
 Rôles : **Admin** (tout), **Liratsu / Éditrice** (contenu + boutique), **Modérateur** (communauté).
 Toutes les modifications sont tracées dans **Réglages > Journal d'activité**.
 

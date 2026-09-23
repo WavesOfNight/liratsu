@@ -138,6 +138,7 @@ export interface Config {
     'shop-settings': ShopSetting;
     'easter-eggs': EasterEgg;
     'game-settings': GameSetting;
+    'moderation-settings': ModerationSetting;
     'legal-identity': LegalIdentity;
     integrations: Integration;
   };
@@ -150,6 +151,7 @@ export interface Config {
     'shop-settings': ShopSettingsSelect<false> | ShopSettingsSelect<true>;
     'easter-eggs': EasterEggsSelect<false> | EasterEggsSelect<true>;
     'game-settings': GameSettingsSelect<false> | GameSettingsSelect<true>;
+    'moderation-settings': ModerationSettingsSelect<false> | ModerationSettingsSelect<true>;
     'legal-identity': LegalIdentitySelect<false> | LegalIdentitySelect<true>;
     integrations: IntegrationsSelect<false> | IntegrationsSelect<true>;
   };
@@ -488,12 +490,19 @@ export interface ShippingZone {
   createdAt: string;
 }
 /**
+ * Astuce : la file « 🛡️ Modération » (menu de gauche) permet de valider plus vite, avec aperçu et alertes.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "guestbook".
  */
 export interface Guestbook {
   id: number;
   status: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string | null;
+  flags?: ('insult' | 'vulgar' | 'link' | 'personal' | 'spam' | 'caps' | 'custom' | 'duplicate')[] | null;
+  flaggedTerms?: string | null;
+  moderatedBy?: (number | null) | User;
+  moderatedAt?: string | null;
   name: string;
   message: string;
   mood?: ('star' | 'heart' | 'fish' | 'bubble' | 'music') | null;
@@ -503,12 +512,20 @@ export interface Guestbook {
   createdAt: string;
 }
 /**
+ * Astuce : la file « 🛡️ Modération » (menu de gauche) permet de valider plus vite, avec aperçu et alertes.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "fanarts".
  */
 export interface Fanart {
   id: number;
   status: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string | null;
+  flags?: ('insult' | 'vulgar' | 'link' | 'personal' | 'spam' | 'caps' | 'custom' | 'duplicate')[] | null;
+  flaggedTerms?: string | null;
+  moderatedBy?: (number | null) | User;
+  moderatedAt?: string | null;
+  fileHash?: string | null;
   title: string;
   artist: string;
   artistLink?: string | null;
@@ -527,6 +544,14 @@ export interface Fanart {
   focalY?: number | null;
   sizes?: {
     thumb?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    preview?: {
       url?: string | null;
       width?: number | null;
       height?: number | null;
@@ -1202,6 +1227,11 @@ export interface ShippingZonesSelect<T extends boolean = true> {
  */
 export interface GuestbookSelect<T extends boolean = true> {
   status?: T;
+  rejectionReason?: T;
+  flags?: T;
+  flaggedTerms?: T;
+  moderatedBy?: T;
+  moderatedAt?: T;
   name?: T;
   message?: T;
   mood?: T;
@@ -1216,6 +1246,12 @@ export interface GuestbookSelect<T extends boolean = true> {
  */
 export interface FanartsSelect<T extends boolean = true> {
   status?: T;
+  rejectionReason?: T;
+  flags?: T;
+  flaggedTerms?: T;
+  moderatedBy?: T;
+  moderatedAt?: T;
+  fileHash?: T;
   title?: T;
   artist?: T;
   artistLink?: T;
@@ -1236,6 +1272,16 @@ export interface FanartsSelect<T extends boolean = true> {
     | T
     | {
         thumb?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        preview?:
           | T
           | {
               url?: T;
@@ -1970,6 +2016,45 @@ export interface GameSetting {
   createdAt?: string | null;
 }
 /**
+ * Le filtre automatique bloque ou signale les messages ; les modérateurs valident ensuite dans « Modération ».
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "moderation-settings".
+ */
+export interface ModerationSetting {
+  id: number;
+  links?: ('block' | 'review' | 'allow') | null;
+  allowedDomains?: string | null;
+  blockPersonal?: boolean | null;
+  /**
+   * Un par ligne. Les variantes (majuscules, accents, l33t « s4l0p3 », lettres espacées) sont détectées automatiquement.
+   */
+  blockedWords?: string | null;
+  /**
+   * Un par ligne. Pratique pour les spoilers, les pseudos de trolls connus, etc.
+   */
+  watchedWords?: string | null;
+  /**
+   * Désactivé par défaut : tous les messages passent par un modérateur (modération a priori).
+   */
+  autoApproveClean?: boolean | null;
+  rejectDuplicates?: boolean | null;
+  emailArtist?: boolean | null;
+  rejectionReasons?:
+    | {
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  notify?: boolean | null;
+  /**
+   * Vide = adresse « Email de notification interne » des réglages SMTP.
+   */
+  notifyEmails?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * À reprendre à l’identique depuis reads-records.com. Utilisable dans les textes via {{editeur.nom}}, {{editeur.siren}}, {{hebergeur.nom}}, etc.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2535,6 +2620,31 @@ export interface GameSettingsSelect<T extends boolean = true> {
               id?: T;
             };
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "moderation-settings_select".
+ */
+export interface ModerationSettingsSelect<T extends boolean = true> {
+  links?: T;
+  allowedDomains?: T;
+  blockPersonal?: T;
+  blockedWords?: T;
+  watchedWords?: T;
+  autoApproveClean?: T;
+  rejectDuplicates?: T;
+  emailArtist?: T;
+  rejectionReasons?:
+    | T
+    | {
+        label?: T;
+        id?: T;
+      };
+  notify?: T;
+  notifyEmails?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

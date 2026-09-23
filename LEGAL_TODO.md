@@ -33,8 +33,8 @@ Tous les points ci-dessous sont spécifiques au site Liratsu et ont été rédig
 
 **CGU**
 - [ ] Connexion Twitch OAuth (données récupérées, non-conservation du jeton).
-- [ ] Livre d'or : modération a priori, contenus interdits.
-- [ ] Fanarts : licence d'affichage gratuite, non exclusive, site + lives, retrait sur simple demande.
+- [ ] Livre d'or : modération a priori, contenus interdits, **filtre automatique** (refus des liens, des coordonnées personnelles et des insultes) — à mentionner dans les CGU.
+- [ ] Fanarts : licence d'affichage gratuite, non exclusive, site + lives, retrait sur simple demande ; suppression des métadonnées EXIF à l'envoi ; email de décision si une adresse est laissée.
 - [ ] Mini-jeux : pseudo public, modération, sanction de la triche.
 - [ ] Codes surprise : sans valeur monétaire, non échangeables, peuvent expirer.
 

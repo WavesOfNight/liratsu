@@ -1,5 +1,5 @@
 'use client'
-/** En-tête façon barre des tâches glossy : orbe-logo, navigation en onglets, préférences. */
+/** En-tête façon barre des tâches glossy : nom du site, navigation en onglets, préférences. */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import React, { useState } from 'react'
@@ -20,7 +20,6 @@ export function Header({ items, siteName }: { items: NavItem[]; siteName: string
     <header className={styles.header}>
       <div className={`container ${styles.inner}`}>
         <Link href="/" className={styles.brand} aria-label={`${siteName} — accueil`} onClick={() => playSound('click')}>
-          <img src="/favicon.svg" alt="" width={40} height={40} className={styles.orb} />
           <span className={styles.brandText}>{siteName}</span>
         </Link>
         <button type="button" className={styles.burger} aria-expanded={open} aria-controls="main-nav" onClick={() => setOpen(!open)}>

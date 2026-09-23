@@ -16,6 +16,7 @@ import { EasterEggs } from './globals/EasterEggs'
 import { GameSettings } from './globals/GameSettings'
 import { Integrations } from './globals/Integrations'
 import { LegalIdentity } from './globals/LegalIdentity'
+import { ModerationSettings } from './globals/ModerationSettings'
 import { BiographyPage, HomePage, LinksPage } from './globals/Pages'
 import { ShopSettings } from './globals/ShopSettings'
 import { SiteSettings } from './globals/SiteSettings'
@@ -55,7 +56,7 @@ const { collections, globals } = withActivityLog(
     ActivityLog,
     WebhookEvents,
   ],
-  [SiteSettings, Theme, HomePage, BiographyPage, LinksPage, ShopSettings, EasterEggs, GameSettings, LegalIdentity, Integrations],
+  [SiteSettings, Theme, HomePage, BiographyPage, LinksPage, ShopSettings, EasterEggs, GameSettings, ModerationSettings, LegalIdentity, Integrations],
 )
 
 export default buildConfig({
@@ -74,6 +75,10 @@ export default buildConfig({
       },
       providers: ['@/components/admin/TwoFactorGate#TwoFactorGate'],
       beforeDashboard: ['@/components/admin/Dashboard#Dashboard'],
+      beforeNavLinks: ['@/components/admin/moderation/ModerationNavLink#ModerationNavLink'],
+      views: {
+        moderation: { Component: '@/components/admin/moderation/ModerationView#ModerationView', path: '/moderation' },
+      },
     },
   },
   i18n: { supportedLanguages: { fr }, fallbackLanguage: 'fr' },

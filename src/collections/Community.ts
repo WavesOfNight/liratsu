@@ -3,33 +3,21 @@
  * codes surprise, inscriptions « préviens-moi » et membres connectés via Twitch.
  * Tout contenu envoyé par le public est modéré a priori (statut « en attente »).
  */
-import type { CollectionConfig, Field } from 'payload'
+import type { CollectionConfig } from 'payload'
 import { anyone, approvedOrModerator, hasRole, isAdmin, isModerator, isStaff } from '@/access/roles'
+import { moderationFields, stampModeration } from '@/fields/moderation'
 import { revalidateCollection } from '@/hooks/revalidate'
 
-const moderationStatus: Field = {
-  name: 'status',
-  label: 'Modération',
-  type: 'select',
-  required: true,
-  defaultValue: 'pending',
-  index: true,
-  options: [
-    { label: 'En attente', value: 'pending' },
-    { label: 'Approuvé', value: 'approved' },
-    { label: 'Refusé', value: 'rejected' },
-  ],
-  admin: { position: 'sidebar' },
-}
+const moderationHint = 'Astuce : la file « 🛡️ Modération » (menu de gauche) permet de valider plus vite, avec aperçu et alertes.'
 
 export const Guestbook: CollectionConfig = {
   slug: 'guestbook',
   labels: { singular: 'Message du livre d’or', plural: 'Livre d’or' },
-  admin: { group: 'Communauté', useAsTitle: 'name', defaultColumns: ['name', 'message', 'status', 'createdAt'] },
+  admin: { group: 'Communauté', useAsTitle: 'name', defaultColumns: ['name', 'message', 'status', 'flags', 'createdAt'], description: moderationHint },
   access: { read: approvedOrModerator, create: isModerator, update: isModerator, delete: isModerator },
-  hooks: { afterChange: [revalidateCollection] },
+  hooks: { beforeChange: [stampModeration], afterChange: [revalidateCollection] },
   fields: [
-    moderationStatus,
+    ...moderationFields,
     { name: 'name', label: 'Pseudo', type: 'text', required: true, maxLength: 40 },
     { name: 'message', label: 'Message', type: 'textarea', required: true, maxLength: 600 },
     {
@@ -47,17 +35,34 @@ export const Guestbook: CollectionConfig = {
 export const Fanarts: CollectionConfig = {
   slug: 'fanarts',
   labels: { singular: 'Fanart', plural: 'Fanarts' },
-  admin: { group: 'Communauté', useAsTitle: 'title', defaultColumns: ['title', 'artist', 'status', 'createdAt'] },
+  admin: { group: 'Communauté', useAsTitle: 'title', defaultColumns: ['title', 'artist', 'status', 'flags', 'createdAt'], description: moderationHint },
   access: { read: approvedOrModerator, create: isModerator, update: isModerator, delete: isModerator },
-  hooks: { afterChange: [revalidateCollection] },
+  hooks: {
+    beforeChange: [stampModeration],
+    afterChange: [
+      revalidateCollection,
+      async ({ doc, previousDoc, operation, req }) => {
+        // Email à l'artiste lorsqu'un modérateur valide ou refuse son fanart.
+        if (operation !== 'update' || previousDoc?.status === doc.status || doc.status === 'pending') return doc
+        const { notifyArtist } = await import('@/lib/moderation/notify')
+        await notifyArtist(req.payload, doc.id, req).catch((err) => req.payload.logger.error({ err }, 'notifyArtist'))
+        return doc
+      },
+    ],
+  },
   // Le fichier n'est servi publiquement qu'une fois le fanart approuvé (règle read ci-dessus).
+  // À l'envoi, l'image est ré-encodée (métadonnées EXIF / GPS supprimées) — voir /api/site/community/fanart.
   upload: {
     mimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
-    imageSizes: [{ name: 'thumb', width: 480, height: 480, position: 'centre' }],
+    imageSizes: [
+      { name: 'thumb', width: 480, height: 480, position: 'centre' },
+      { name: 'preview', width: 1200 },
+    ],
     adminThumbnail: 'thumb',
   },
   fields: [
-    moderationStatus,
+    ...moderationFields,
+    { name: 'fileHash', type: 'text', index: true, admin: { hidden: true }, access: { read: ({ req }) => hasRole(req, 'moderator') } },
     { name: 'title', label: 'Titre', type: 'text', required: true, maxLength: 80 },
     { name: 'artist', label: 'Artiste', type: 'text', required: true, maxLength: 40 },
     { name: 'artistLink', label: 'Lien de l’artiste', type: 'text' },

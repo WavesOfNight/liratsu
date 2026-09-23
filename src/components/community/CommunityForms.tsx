@@ -43,7 +43,11 @@ export function GuestbookForm() {
           website: fd.get('website'),
         })
         if (r.ok) playSound('notify')
-        setS(r.ok ? { kind: 'ok', msg: 'Merci ! Ton message apparaîtra après validation par la modération ✦' } : { kind: 'error', msg: String(r.data.error ?? 'Erreur') })
+        setS(
+          r.ok
+            ? { kind: 'ok', msg: r.data.published ? 'Merci ! Ton message est publié ✦' : 'Merci ! Ton message apparaîtra après validation par la modération ✦' }
+            : { kind: 'error', msg: String(r.data.error ?? 'Erreur') },
+        )
       }}
     >
       <div className="field">

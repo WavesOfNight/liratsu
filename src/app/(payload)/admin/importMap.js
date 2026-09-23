@@ -29,7 +29,9 @@ import { ColorField as ColorField_2d3b6dcbebce75fc2ef5ac094f4218f0 } from '@/com
 import { AdminIcon as AdminIcon_b80a86fce1072afc84cd6a430a965697 } from '@/components/admin/AdminLogo'
 import { AdminLogo as AdminLogo_b80a86fce1072afc84cd6a430a965697 } from '@/components/admin/AdminLogo'
 import { Dashboard as Dashboard_0e7b23c75ea046975e1784ba01f82886 } from '@/components/admin/Dashboard'
+import { ModerationNavLink as ModerationNavLink_3c8191a862c1fb48c9293a85c7003718 } from '@/components/admin/moderation/ModerationNavLink'
 import { TwoFactorGate as TwoFactorGate_8d9e14d9e29a25679bebf93d03f29353 } from '@/components/admin/TwoFactorGate'
+import { ModerationView as ModerationView_6e3c9312d153e195c31bf42d6bede5d6 } from '@/components/admin/moderation/ModerationView'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -65,6 +67,8 @@ export const importMap = {
   "@/components/admin/AdminLogo#AdminIcon": AdminIcon_b80a86fce1072afc84cd6a430a965697,
   "@/components/admin/AdminLogo#AdminLogo": AdminLogo_b80a86fce1072afc84cd6a430a965697,
   "@/components/admin/Dashboard#Dashboard": Dashboard_0e7b23c75ea046975e1784ba01f82886,
+  "@/components/admin/moderation/ModerationNavLink#ModerationNavLink": ModerationNavLink_3c8191a862c1fb48c9293a85c7003718,
   "@/components/admin/TwoFactorGate#TwoFactorGate": TwoFactorGate_8d9e14d9e29a25679bebf93d03f29353,
+  "@/components/admin/moderation/ModerationView#ModerationView": ModerationView_6e3c9312d153e195c31bf42d6bede5d6,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }
