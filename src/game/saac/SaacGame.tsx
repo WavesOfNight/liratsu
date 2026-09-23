@@ -33,6 +33,7 @@ export default function SaacGame() {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec le stockage/API du navigateur après hydratation
     setTouch(window.matchMedia('(pointer: coarse)').matches)
     void loadBoard(true)
   }, [loadBoard])
@@ -143,10 +144,10 @@ export default function SaacGame() {
               <p>Clique sur « Jouer » pour lancer une partie !</p>
             </div>
           )}
-          {touch && session && inputRef.current && (
+          {touch && session && (
             <>
-              <Joystick side="left" onChange={(v) => (inputRef.current!.touchMove = v)} label="Déplacement" />
-              <Joystick side="right" onChange={(v) => (inputRef.current!.touchAim = v)} label="Tir" />
+              <Joystick side="left" onChange={(v) => inputRef.current && (inputRef.current.touchMove = v)} label="Déplacement" />
+              <Joystick side="right" onChange={(v) => inputRef.current && (inputRef.current.touchAim = v)} label="Tir" />
             </>
           )}
         </div>

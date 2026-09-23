@@ -1,12 +1,11 @@
 import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  plugins: [tsconfigPaths()],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
-    include: ['tests/int/**/*.int.spec.ts'],
+    environment: 'node',
+    include: ['tests/unit/**/*.test.ts'],
+    env: { PAYLOAD_SECRET: 'test-secret', ENCRYPTION_KEY: 'test-encryption-key', NEXT_PUBLIC_SERVER_URL: 'http://localhost:3000' },
   },
 })

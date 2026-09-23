@@ -60,9 +60,11 @@ export async function Dashboard({ payload, user }: { payload: Payload; user?: { 
         <div style={card}>
           <strong>À modérer</strong>
           <p style={{ margin: '8px 0' }}>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- lien interne à l'admin Payload */}
             <a href="/admin/collections/guestbook?where[status][equals]=pending">Livre d’or : {guestbook?.totalDocs ?? 0}</a>
           </p>
           <p style={{ margin: 0 }}>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- lien interne à l'admin Payload */}
             <a href="/admin/collections/fanarts?where[status][equals]=pending">Fanarts : {fanarts?.totalDocs ?? 0}</a>
           </p>
         </div>

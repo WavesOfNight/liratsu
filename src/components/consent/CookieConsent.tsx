@@ -37,10 +37,12 @@ export function ConsentProvider({ children, analyticsAvailable }: { children: Re
   useEffect(() => {
     try {
       const c = JSON.parse(localStorage.getItem(KEY) || 'null') as Consent | null
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec le stockage/API du navigateur après hydratation
       if (c && Date.now() - c.at < MAX_AGE) setConsent(c)
     } catch {
       /* rien */
     }
+     
     setReady(true)
   }, [])
 

@@ -2,7 +2,7 @@
 /** En-tête façon barre des tâches glossy : orbe-logo, navigation en onglets, préférences. */
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { PrefsToggles } from '../prefs/PrefsToggles'
 import { playSound } from '../prefs/sounds'
 import styles from './Header.module.css'
@@ -11,8 +11,10 @@ export type NavItem = { href: string; label: string; soon?: boolean }
 
 export function Header({ items, siteName }: { items: NavItem[]; siteName: string }) {
   const pathname = usePathname()
-  const [open, setOpen] = useState(false)
-  useEffect(() => setOpen(false), [pathname])
+  // Le menu mobile se referme de lui-même quand la page change.
+  const [openOn, setOpenOn] = useState<string | null>(null)
+  const open = openOn === pathname
+  const setOpen = (v: boolean) => setOpenOn(v ? pathname : null)
 
   return (
     <header className={styles.header}>

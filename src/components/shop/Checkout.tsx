@@ -62,6 +62,7 @@ export function Checkout({ hasCustomProducts }: { hasCustomProducts?: boolean })
         if (!c.stripe && c.paypalClientId) setProvider('paypal')
       })
       .catch(() => null)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture du paramètre d'URL au montage
     if (new URLSearchParams(window.location.search).get('paiement') === 'annule') setError('Paiement annulé : ton panier est toujours là ✦')
   }, [])
 
@@ -69,10 +70,7 @@ export function Checkout({ hasCustomProducts }: { hasCustomProducts?: boolean })
   const cartKey = JSON.stringify(cartPayload)
 
   useEffect(() => {
-    if (!cartPayload.length) {
-      setQuote(null)
-      return
-    }
+    if (!cartPayload.length) return // panier vide : l'écran « panier vide » est affiché, pas de devis
     const ctrl = new AbortController()
     fetch('/api/site/shop/quote', {
       method: 'POST',

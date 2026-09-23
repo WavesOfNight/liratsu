@@ -68,6 +68,7 @@ export default async function CommunityPage() {
               </form>
             </>
           ) : (
+            // eslint-disable-next-line @next/next/no-html-link-for-pages -- route API (redirection OAuth), pas une page
             <a className="candy-btn candy-btn--small" href="/api/site/auth/twitch/login">
               Se connecter avec Twitch
             </a>

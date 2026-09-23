@@ -1,10 +1,12 @@
 import Link from 'next/link'
+import { connection } from 'next/server'
 import React from 'react'
 import { getSiteData } from '@/lib/site'
 import styles from './not-found.module.css'
 
 /** 404 : un aquarium vide. Le poisson échappé est cliquable et ramène à l'accueil. */
 export default async function NotFound() {
+  await connection() // rendu dynamique : l’easter egg se règle dans l’admin
   const { eggs } = await getSiteData()
   if (eggs.aquarium404 === false)
     return (

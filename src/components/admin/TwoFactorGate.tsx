@@ -16,17 +16,14 @@ export function TwoFactorGate({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!user) {
-      setState('ok')
-      return
-    }
+    if (!user) return
     fetch('/api/site/2fa/status', { credentials: 'include' })
       .then((r) => r.json())
       .then((d: { required?: boolean }) => setState(d.required ? 'required' : 'ok'))
       .catch(() => setState('ok'))
   }, [user])
 
-  if (state !== 'required') return <>{children}</>
+  if (!user || state !== 'required') return <>{children}</>
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -73,6 +70,7 @@ export function TwoFactorGate({ children }: { children: React.ReactNode }) {
           Valider
         </button>
         <p style={{ marginTop: 16 }}>
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- route de l'admin Payload */}
           <a href="/admin/logout">Se déconnecter</a>
         </p>
       </form>

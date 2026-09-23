@@ -38,6 +38,7 @@ export function PrefsProvider({ children, defaultTheme, soundsAvailable }: { chi
 
   useEffect(() => {
     const stored = readStored()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec le stockage/API du navigateur après hydratation
     setPrefs((p) => ({ ...p, ...stored }))
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     setSRM(mq.matches)
