@@ -8,6 +8,9 @@ import type { Role } from '@/access/roles'
 import { isTwoFactorSatisfied } from './twoFactor'
 import { getPayloadClient } from './payload'
 
+// Messages de validation en français.
+z.config(z.locales.fr())
+
 // ---- Limitation de débit (mémoire du process ; suffisant pour une instance unique Plesk/PM2) ----
 const buckets = new Map<string, { count: number; reset: number }>()
 

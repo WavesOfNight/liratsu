@@ -15,7 +15,7 @@ export async function renderInvoicePdf(payload: Payload, order: Order): Promise<
   const issuer = shop.invoice?.issuerName || legal.editeur?.nom || 'Reads Records'
   const details =
     shop.invoice?.issuerDetails ||
-    [legal.editeur?.forme && `${legal.editeur.forme} au capital de ${legal.editeur.capital ?? '—'}`, legal.editeur?.siege, legal.editeur?.rcs, legal.editeur?.siren && `SIREN ${legal.editeur.siren}`, legal.editeur?.tva && `TVA ${legal.editeur.tva}`]
+    [legal.editeur?.forme && [legal.editeur.forme, legal.editeur.capital && `au capital de ${legal.editeur.capital}`].filter(Boolean).join(' '), legal.editeur?.siege, legal.editeur?.rcs, legal.editeur?.siren && `SIREN ${legal.editeur.siren}`, legal.editeur?.tva && `TVA ${legal.editeur.tva}`]
       .filter(Boolean)
       .join('\n')
 
@@ -76,20 +76,20 @@ export async function renderInvoicePdf(payload: Payload, order: Order): Promise<
     y += 18
   }
   row('Sous-total TTC', formatEuros(am.subtotal ?? 0))
-  if (am.discount) row(`Réduction${order.couponCode ? ` (${order.couponCode})` : ''}`, `− ${formatEuros(am.discount)}`)
+  if (am.discount) row(`Réduction${order.couponCode ? ` (${order.couponCode})` : ''}`, `- ${formatEuros(am.discount)}`)
   row('Livraison TTC', formatEuros(am.shipping ?? 0))
   const breakdown = (am.vatBreakdown as { rate: number; vatCents: number }[] | null) ?? []
   for (const b of breakdown) row(`dont TVA ${b.rate} %`, formatEuros(b.vatCents))
   const total = Math.round((order.total ?? 0) * 100)
   row('Total HT', formatEuros(total - (am.vat ?? breakdown.reduce((s, b) => s + b.vatCents, 0))))
   row('TOTAL TTC', formatEuros(total), true)
-  for (const r of order.refunds ?? []) row(`Remboursé le ${new Date(r.at ?? '').toLocaleDateString('fr-FR')}`, `− ${formatEuros(r.amount ?? 0)}`)
+  for (const r of order.refunds ?? []) row(`Remboursé le ${new Date(r.at ?? '').toLocaleDateString('fr-FR')}`, `- ${formatEuros(r.amount ?? 0)}`)
 
   doc
     .fontSize(8)
     .fillColor('#46507a')
-    .text(shop.invoice?.footer ?? '', 48, 760, { width: 499, align: 'center' })
-    .text('Pas d’escompte pour paiement anticipé. Pénalités de retard : 3 fois le taux d’intérêt légal. Indemnité forfaitaire pour frais de recouvrement : 40 €.', 48, 780, {
+    .text(shop.invoice?.footer ?? '', 48, 725, { width: 499, align: 'center', lineBreak: true })
+    .text('Pas d’escompte pour paiement anticipé. Pénalités de retard : 3 fois le taux d’intérêt légal. Indemnité forfaitaire pour frais de recouvrement : 40 €.', 48, 750, {
       width: 499,
       align: 'center',
     })
