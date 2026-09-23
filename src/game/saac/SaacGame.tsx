@@ -204,9 +204,6 @@ export default function SaacGame() {
             ))}
             {board.length === 0 && <li className="muted">Personne encore… à toi de jouer !</li>}
           </ol>
-          <p className="muted" style={{ fontSize: '.85rem' }}>
-            Manette compatible · sur mobile, deux joysticks apparaissent à l’écran.
-          </p>
         </div>
       </aside>
     </div>

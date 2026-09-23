@@ -97,7 +97,7 @@ export const SiteSettings: GlobalConfig = {
         {
           label: 'Pied de page',
           fields: [
-            { name: 'footerText', label: 'Texte du pied de page', type: 'text', defaultValue: '© Liratsu · Fait avec des bulles' },
+            { name: 'footerText', label: 'Texte du pied de page', type: 'text', defaultValue: '© Liratsu' },
             { name: 'devCredit', label: 'Crédit développeur', type: 'text', defaultValue: 'Codé par El Technico Lionel' },
             { name: 'publisherCredit', label: 'Mention éditeur', type: 'text', defaultValue: 'Site édité par Reads Records' },
           ],
