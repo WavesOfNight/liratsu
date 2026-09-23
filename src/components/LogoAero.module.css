@@ -1,0 +1,177 @@
+.logo {
+  position: relative;
+  display: inline-block;
+  margin: 0;
+  line-height: 1;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.15em 0.25em;
+}
+.sm {
+  font-size: 1.6rem;
+}
+.md {
+  font-size: 2.6rem;
+}
+.lg {
+  font-size: clamp(3rem, 12vw, 5.2rem);
+}
+.xl {
+  font-size: clamp(3.6rem, 16vw, 7.5rem);
+}
+
+.word {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
+  background: linear-gradient(180deg, #bfe8ff 0%, #5cbcf7 38%, #2a86e0 66%, #1e6fd9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 2px #fff;
+  paint-order: stroke fill;
+  filter: drop-shadow(0 0.06em 0.12em rgba(30, 111, 217, 0.45)) drop-shadow(0 0 0.35em rgba(92, 188, 247, 0.55));
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Reflet glossy : copie du texte masquée sur la moitié haute */
+.word::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.35) 48%, transparent 52%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 0;
+  pointer-events: none;
+}
+
+.word:hover {
+  transform: scale(1.03) rotate(-1deg);
+}
+
+.decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff 0 14%, rgba(255, 255, 255, 0.3) 16% 50%, rgba(63, 169, 245, 0.35) 75%, rgba(255, 255, 255, 0.8));
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  animation: floaty 4s ease-in-out infinite;
+}
+.b1 {
+  width: 0.28em;
+  height: 0.28em;
+  left: -0.1em;
+  top: 0.1em;
+}
+.b2 {
+  width: 0.18em;
+  height: 0.18em;
+  right: -0.05em;
+  bottom: 0.05em;
+  animation-delay: -1.3s;
+}
+.b3 {
+  width: 0.12em;
+  height: 0.12em;
+  right: 0.3em;
+  top: -0.05em;
+  animation-delay: -2.4s;
+}
+
+.star {
+  position: absolute;
+  width: 0.3em;
+  height: 0.3em;
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+.s1 {
+  right: -0.25em;
+  top: -0.1em;
+}
+.s2 {
+  left: 0.9em;
+  bottom: -0.2em;
+  width: 0.2em;
+  height: 0.2em;
+  animation-delay: -1.2s;
+}
+
+@keyframes floaty {
+  50% {
+    transform: translateY(-0.08em);
+  }
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.7) rotate(0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1) rotate(25deg);
+  }
+}
+
+/* Easter egg : éclatement */
+.popped .word {
+  animation: pop 2.2s ease forwards;
+}
+@keyframes pop {
+  0% {
+    transform: scale(1);
+  }
+  10% {
+    transform: scale(1.25);
+    opacity: 1;
+  }
+  16% {
+    transform: scale(0.1);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(0.1);
+    opacity: 0;
+  }
+  88% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.splash {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  pointer-events: none;
+}
+.splash i {
+  position: absolute;
+  width: 0.14em;
+  height: 0.14em;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #fff, #5cbcf7);
+  animation: drop 0.9s ease-out 0.3s forwards;
+  opacity: 0;
+}
+@keyframes drop {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--a)) translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateX(1.4em) translateY(0.4em);
+  }
+}

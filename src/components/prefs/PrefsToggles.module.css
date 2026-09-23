@@ -1,0 +1,29 @@
+.toggles {
+  display: flex;
+  gap: 6px;
+}
+.toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.95);
+  background: radial-gradient(circle at 35% 30%, #fff 0 18%, rgba(223, 242, 255, 0.95) 45%, rgba(140, 205, 250, 0.9));
+  box-shadow: 0 4px 10px rgba(30, 111, 217, 0.25);
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toggle:hover {
+  transform: scale(1.1);
+}
+.toggle[aria-pressed='true'] {
+  box-shadow:
+    0 0 0 3px var(--c-star),
+    0 4px 10px rgba(30, 111, 217, 0.25);
+}
+.toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
