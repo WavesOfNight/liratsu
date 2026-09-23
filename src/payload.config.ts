@@ -66,7 +66,7 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
     meta: {
       titleSuffix: ' · Liratsu Admin',
-      icons: [{ rel: 'icon', type: 'image/svg+xml', url: '/favicon.svg' }],
+      icons: [{ rel: 'icon', type: 'image/png', url: '/favicon.png' }],
     },
     components: {
       graphics: {

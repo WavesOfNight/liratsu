@@ -44,7 +44,7 @@ export function TwoFactorGate({ children }: { children: React.ReactNode }) {
         onSubmit={submit}
         style={{ background: '#fff', padding: 32, borderRadius: 20, boxShadow: '0 20px 50px rgba(30,111,217,.25)', width: 340, textAlign: 'center' }}
       >
-        <img src="/favicon.svg" alt="" width={56} height={56} />
+        <img src="/favicon.png" alt="" width={56} height={56} style={{ borderRadius: '50%' }} />
         <h2 style={{ margin: '12px 0 4px', color: '#1B2240' }}>Double authentification</h2>
         <p style={{ color: '#46507a', fontSize: 14 }}>Saisis le code à 6 chiffres de ton application d’authentification.</p>
         <input

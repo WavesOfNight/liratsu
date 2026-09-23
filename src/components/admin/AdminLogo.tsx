@@ -24,5 +24,5 @@ export function AdminLogo() {
 }
 
 export function AdminIcon() {
-  return <img src="/favicon.svg" alt="Liratsu" width={26} height={26} />
+  return <img src="/favicon.png" alt="Liratsu" width={26} height={26} style={{ borderRadius: '50%' }} />
 }

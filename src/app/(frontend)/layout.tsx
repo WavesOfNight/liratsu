@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(absoluteUrl(site)),
     title: { default: `${site.siteName} — ${site.tagline ?? ''}`.trim(), template: `%s · ${site.siteName}` },
     description: site.metaDescription ?? undefined,
-    icons: { icon: [{ url: '/favicon.svg', type: 'image/svg+xml' }], apple: '/img/liratsu-avatar.png' },
+    icons: { icon: [{ url: '/favicon.png', type: 'image/png' }], apple: '/favicon.png' },
     openGraph: {
       type: 'website',
       locale: 'fr_FR',
