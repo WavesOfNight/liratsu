@@ -10,7 +10,7 @@ const site = await payload.findGlobal({ slug: 'site-settings' })
 const data: Record<string, unknown> = {}
 for (const arg of process.argv.slice(2)) {
   const [key, status] = arg.split('=')
-  if (key && ['on', 'off', 'soon'].includes(status)) data[key] = { ...(site as Record<string, object>)[key], status }
+  if (key && ['on', 'off', 'soon'].includes(status)) data[key] = { ...(site as unknown as Record<string, object>)[key], status }
 }
 await payload.updateGlobal({ slug: 'site-settings', data })
 console.log('Sections mises à jour :', Object.keys(data).join(', ') || '(aucune)')
