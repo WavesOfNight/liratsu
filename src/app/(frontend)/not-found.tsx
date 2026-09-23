@@ -1,9 +1,23 @@
 import Link from 'next/link'
 import React from 'react'
+import { getSiteData } from '@/lib/site'
 import styles from './not-found.module.css'
 
 /** 404 : un aquarium vide. Le poisson échappé est cliquable et ramène à l'accueil. */
-export default function NotFound() {
+export default async function NotFound() {
+  const { eggs } = await getSiteData()
+  if (eggs.aquarium404 === false)
+    return (
+      <div className="container page-head">
+        <h1>404</h1>
+        <p>Cette page n’existe pas.</p>
+        <p>
+          <Link href="/" className="candy-btn">
+            Retour à l’accueil
+          </Link>
+        </p>
+      </div>
+    )
   return (
     <div className="container">
       <div className={styles.wrap}>
