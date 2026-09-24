@@ -36,7 +36,12 @@ PREVIOUS="$(readlink -f current 2>/dev/null || true)"
 
 switch_to() {
   ln -sfn "$1" current.tmp && mv -Tf current.tmp current
-  (cd current && pm2 startOrReload ecosystem.config.cjs --update-env)
+  # `pm2 reload`/`startOrReload` ne re-résout PAS le cwd/script depuis le fichier de config
+  # quand un process du même nom existe déjà : il redémarre l'ANCIEN process avec ses
+  # anciens chemins enregistrés, symlink ou pas. Un delete + start garantit un process
+  # fraîchement lié à la release actuelle (petite coupure de quelques centaines de ms,
+  # largement préférable à re-servir silencieusement l'ancien code indéfiniment).
+  (cd current && pm2 delete liratsu >/dev/null 2>&1; pm2 start ecosystem.config.cjs)
   pm2 save >/dev/null
 }
 
