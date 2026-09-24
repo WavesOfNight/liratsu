@@ -7,9 +7,9 @@
 import Link from 'next/link'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { playSound } from '@/components/prefs/sounds'
+import { loadRatsuAssets } from './assets'
 import { Game, type GameResult, H, W } from './game'
 import { Input } from './input'
-import { loadOverrides } from './overrides'
 import styles from './ratsu.module.css'
 
 type Track = { title: string; url: string; floorFrom: number }
@@ -18,9 +18,9 @@ type Session = {
   seed: string
   difficulty: 'easy' | 'normal' | 'hard'
   startHearts: number
+  startBombs: number
   floors: number
   leaderboard: boolean
-  sprites: Record<string, string>
   music: Track[]
 }
 type Row = { nickname: string; score: number; floor: number; won: boolean }
@@ -106,7 +106,7 @@ export default function RatsuGame() {
     void loadBoard(isDaily)
   }, [loadBoard])
 
-  // (Re)création du moteur quand une session commence : précharge les sprites personnalisés d'abord.
+  // (Re)création du moteur quand une session commence : précharge les sprites embarqués d'abord.
   useEffect(() => {
     const canvas = canvasRef.current
     const wrap = wrapRef.current
@@ -124,38 +124,43 @@ export default function RatsuGame() {
     }
     document.addEventListener('visibilitychange', onVis)
 
-    void loadOverrides(session.sprites).then((sprites) => {
-      if (cancelled) return
-      inputRef.current?.destroy()
-      const input = new Input(wrap)
-      inputRef.current = input
-      cleanupInput = () => input.destroy()
-      const game = new Game(ctx, input, {
-        seed: session.seed,
-        daily,
-        difficulty: session.difficulty,
-        startHearts: session.startHearts,
-        floors: session.floors,
-        sprites,
-        onEnd: (res) => setResult(res),
-        onSound: (s) => playSound(s),
-        onFloorChange: (floor) => playForFloor(floor, session.music),
-      })
-      gameRef.current = game
-      wrap.focus()
+    loadRatsuAssets()
+      .then((assets) => {
+        if (cancelled) return
+        inputRef.current?.destroy()
+        const input = new Input(wrap)
+        inputRef.current = input
+        cleanupInput = () => input.destroy()
+        const game = new Game(ctx, input, {
+          seed: session.seed,
+          daily,
+          difficulty: session.difficulty,
+          startHearts: session.startHearts,
+          startBombs: session.startBombs,
+          floors: session.floors,
+          assets,
+          onEnd: (res) => setResult(res),
+          onSound: (s) => playSound(s),
+          onFloorChange: (floor) => playForFloor(floor, session.music),
+        })
+        gameRef.current = game
+        wrap.focus()
 
-      last = performance.now()
-      const loop = (now: number) => {
-        const dt = Math.min(0.05, (now - last) / 1000)
-        last = now
-        if (!document.hidden) {
-          game.update(dt)
-          game.render()
+        last = performance.now()
+        const loop = (now: number) => {
+          const dt = Math.min(0.05, (now - last) / 1000)
+          last = now
+          if (!document.hidden) {
+            game.update(dt)
+            game.render()
+          }
+          raf = requestAnimationFrame(loop)
         }
         raf = requestAnimationFrame(loop)
-      }
-      raf = requestAnimationFrame(loop)
-    })
+      })
+      .catch(() => {
+        if (!cancelled) setError('Les images du jeu n’ont pas pu être chargées. Réessaie dans un instant.')
+      })
 
     return () => {
       cancelled = true

@@ -2,26 +2,6 @@ import type { GlobalConfig } from 'payload'
 import { anyone, isEditor } from '@/access/roles'
 import { revalidateAll } from '@/hooks/revalidate'
 
-/** Éléments visuels personnalisables (sprites & tileset). Si aucune image n'est fournie pour
- * une clé, le moteur dessine son art pixel intégré (aucune casse possible). */
-export const SPRITE_KEYS = [
-  { value: 'player', label: 'Personnage (Liratsu chibi)' },
-  { value: 'floorTile', label: 'Sol de la salle (texture, répétée)' },
-  { value: 'wallTile', label: 'Mur / bordure (texture, répétée)' },
-  { value: 'rockTile', label: 'Obstacle dans la salle' },
-  { value: 'pickupCoin', label: 'Coquillage (monnaie)' },
-  { value: 'pickupHeart', label: 'Cœur (vie)' },
-  { value: 'enemyGoldfish', label: 'Ennemi : poisson rouge' },
-  { value: 'enemyBubble', label: 'Ennemi : bulle' },
-  { value: 'enemyPopup', label: 'Ennemi : pop-up d’erreur' },
-  { value: 'enemyCursor', label: 'Ennemi : curseur fou' },
-  { value: 'enemyLag', label: 'Ennemi : lag' },
-  { value: 'enemyTroll', label: 'Ennemi : troll de chat' },
-  { value: 'bossPopup', label: 'Boss : Méga Pop-up d’erreur' },
-  { value: 'bossSun', label: 'Boss : Poisson-lune géant' },
-] as const
-export type SpriteKey = (typeof SPRITE_KEYS)[number]['value']
-
 export const GameSettings: GlobalConfig = {
   slug: 'game-settings',
   label: 'Mini-jeux',
@@ -54,6 +34,7 @@ export const GameSettings: GlobalConfig = {
                   ],
                 },
                 { name: 'startHearts', label: 'Cœurs au départ', type: 'number', defaultValue: 3, min: 1, max: 12 },
+                { name: 'startBombs', label: 'Bombes au départ', type: 'number', defaultValue: 1, min: 0, max: 9 },
                 { name: 'floors', label: 'Nombre d’étages', type: 'number', defaultValue: 5, min: 1, max: 20 },
                 {
                   name: 'maxScorePerSecond',
@@ -87,27 +68,6 @@ export const GameSettings: GlobalConfig = {
                     },
                     { name: 'reward', label: 'Code surprise', type: 'relationship', relationTo: 'surprise-codes', required: true },
                     { name: 'message', label: 'Message affiché', type: 'text' },
-                  ],
-                },
-              ],
-            },
-            {
-              label: 'Sprites & tileset',
-              description: 'Remplace un élément du jeu par ta propre image. Laisse vide pour garder le pixel art intégré.',
-              fields: [
-                {
-                  name: 'spriteOverrides',
-                  label: 'Sprites personnalisés',
-                  type: 'array',
-                  labels: { singular: 'Sprite', plural: 'Sprites' },
-                  fields: [
-                    {
-                      type: 'row',
-                      fields: [
-                        { name: 'key', label: 'Élément', type: 'select', required: true, options: [...SPRITE_KEYS] },
-                        { name: 'image', label: 'Image (PNG conseillé, fond transparent)', type: 'upload', relationTo: 'game-assets', required: true, filterOptions: { kind: { equals: 'sprite' } } },
-                      ],
-                    },
                   ],
                 },
               ],

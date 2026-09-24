@@ -22,7 +22,6 @@ export async function POST(req: Request) {
     data: { game: 'the-ratsu', seed, daily: body.data.daily, startedAt: new Date().toISOString(), ipHash: hashIdentifier(clientIp(req)) },
     overrideAccess: true,
   })
-  const sprites = Object.fromEntries((ratsu?.spriteOverrides ?? []).map((s) => [s.key, mediaUrl(s.image)]).filter(([, url]) => url))
   const music = (ratsu?.musicTracks ?? [])
     .map((m) => ({ title: m.title, url: mediaUrl(m.file), floorFrom: m.floorFrom ?? 1 }))
     .filter((m): m is { title: string; url: string; floorFrom: number } => Boolean(m.url))
@@ -31,9 +30,9 @@ export async function POST(req: Request) {
     seed,
     difficulty: ratsu?.difficulty ?? 'normal',
     startHearts: ratsu?.startHearts ?? 3,
+    startBombs: ratsu?.startBombs ?? 1,
     floors: ratsu?.floors ?? 5,
     leaderboard: ratsu?.leaderboardEnabled !== false,
-    sprites,
     music,
   })
 }

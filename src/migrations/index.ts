@@ -5,6 +5,7 @@ import * as migration_20260924_151400_schedule_title_optional from './20260924_1
 import * as migration_20260924_163000_broadcaster_followers from './20260924_163000_broadcaster_followers';
 import * as migration_20260924_180000_member_account from './20260924_180000_member_account';
 import * as migration_20260924_215500_remove_fish_toggle from './20260924_215500_remove_fish_toggle';
+import * as migration_20260925_005100_ratsu_bombs_remove_sprite_admin from './20260925_005100_ratsu_bombs_remove_sprite_admin';
 
 export const migrations = [
   {
@@ -41,5 +42,10 @@ export const migrations = [
     up: migration_20260924_215500_remove_fish_toggle.up,
     down: migration_20260924_215500_remove_fish_toggle.down,
     name: '20260924_215500_remove_fish_toggle'
+  },
+  {
+    up: migration_20260925_005100_ratsu_bombs_remove_sprite_admin.up,
+    down: migration_20260925_005100_ratsu_bombs_remove_sprite_admin.down,
+    name: '20260925_005100_ratsu_bombs_remove_sprite_admin'
   },
 ];

@@ -9,17 +9,23 @@ export class Input {
   aim: Vec = { x: 0, y: 0 }
   pausePressed = false
   confirmPressed = false
+  /** Espace/E pendant la partie (Espace ne sert de « confirmer » que sur les écrans titre/mort/victoire). */
+  bombPressed = false
   touchMove: Vec = { x: 0, y: 0 }
   touchAim: Vec = { x: 0, y: 0 }
+  touchBomb = false
   private keys = new Set<string>()
   private prevPadStart = false
   private prevPadA = false
+  private prevPadB = false
+  private prevTouchBomb = false
 
   private onDown = (e: KeyboardEvent) => {
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault()
     if (!this.keys.has(e.code)) {
       if (e.code === 'Escape' || e.code === 'KeyP') this.pausePressed = true
       if (e.code === 'Enter' || e.code === 'Space') this.confirmPressed = true
+      if (e.code === 'Space' || e.code === 'KeyE') this.bombPressed = true
     }
     this.keys.add(e.code)
   }
@@ -63,8 +69,13 @@ export class Input {
       const a = Boolean(pad.buttons[0]?.pressed)
       if (a && !this.prevPadA) this.confirmPressed = true
       this.prevPadA = a
+      const b = Boolean(pad.buttons[5]?.pressed) // gâchette droite : bombe
+      if (b && !this.prevPadB) this.bombPressed = true
+      this.prevPadB = b
       break
     }
+    if (this.touchBomb && !this.prevTouchBomb) this.bombPressed = true
+    this.prevTouchBomb = this.touchBomb
     mx += this.touchMove.x
     my += this.touchMove.y
     ax += this.touchAim.x
@@ -87,5 +98,10 @@ export class Input {
     const c = this.confirmPressed
     this.confirmPressed = false
     return c
+  }
+  consumeBomb() {
+    const b = this.bombPressed
+    this.bombPressed = false
+    return b
   }
 }

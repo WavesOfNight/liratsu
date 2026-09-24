@@ -2225,6 +2225,7 @@ export interface GameSetting {
     leaderboardEnabled?: boolean | null;
     difficulty?: ('easy' | 'normal' | 'hard') | null;
     startHearts?: number | null;
+    startBombs?: number | null;
     floors?: number | null;
     maxScorePerSecond?: number | null;
     /**
@@ -2236,27 +2237,6 @@ export interface GameSetting {
           threshold?: number | null;
           reward: number | SurpriseCode;
           message?: string | null;
-          id?: string | null;
-        }[]
-      | null;
-    spriteOverrides?:
-      | {
-          key:
-            | 'player'
-            | 'floorTile'
-            | 'wallTile'
-            | 'rockTile'
-            | 'pickupCoin'
-            | 'pickupHeart'
-            | 'enemyGoldfish'
-            | 'enemyBubble'
-            | 'enemyPopup'
-            | 'enemyCursor'
-            | 'enemyLag'
-            | 'enemyTroll'
-            | 'bossPopup'
-            | 'bossSun';
-          image: number | GameAsset;
           id?: string | null;
         }[]
       | null;
@@ -2907,6 +2887,7 @@ export interface GameSettingsSelect<T extends boolean = true> {
         leaderboardEnabled?: T;
         difficulty?: T;
         startHearts?: T;
+        startBombs?: T;
         floors?: T;
         maxScorePerSecond?: T;
         unlocks?:
@@ -2916,13 +2897,6 @@ export interface GameSettingsSelect<T extends boolean = true> {
               threshold?: T;
               reward?: T;
               message?: T;
-              id?: T;
-            };
-        spriteOverrides?:
-          | T
-          | {
-              key?: T;
-              image?: T;
               id?: T;
             };
         musicTracks?:

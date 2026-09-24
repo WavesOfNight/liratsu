@@ -3,12 +3,12 @@
  * Die & retry vu de dessus : salles procédurales, ennemis thématiques internet/aquarium,
  * objets cumulables, boss à chaque étage, mort permanente.
  */
+import { fitSize, type PlayerDir, type RatsuAssets, type SaacDir, tileCanvas } from './assets'
 import { COLS, DIRS, type Dir, type Floor, generateFloor, OPPOSITE, type Room, ROWS, roomAt } from './dungeon'
 import type { Input } from './input'
 import { BASE_STATS, type Item, ITEMS, type Stats } from './items'
-import type { SpriteOverrides } from './overrides'
 import { createRng, type Rng } from './rng'
-import { drawHeart, sprites } from './sprites'
+import { drawHeart } from './sprites'
 
 export const TILE = 24
 export const W = COLS * TILE + TILE * 2 // 360
@@ -24,24 +24,26 @@ export type Difficulty = 'easy' | 'normal' | 'hard'
 export type GameResult = { score: number; floor: number; won: boolean; durationMs: number; kills: number; rooms: number; seed: string; daily: boolean }
 export type SoundName = 'shoot' | 'hurt' | 'pop' | 'coin' | 'notify'
 
-type EnemyKind = 'goldfish' | 'bubble' | 'popup' | 'cursor' | 'lag' | 'troll' | 'boss'
-type Enemy = { kind: EnemyKind; x: number; y: number; r: number; hp: number; maxHp: number; vx: number; vy: number; t: number; flash: number; phase: number }
+type EnemyKind = 'blob' | 'saac' | 'boss'
+type Enemy = { kind: EnemyKind; x: number; y: number; r: number; hp: number; maxHp: number; vx: number; vy: number; t: number; flash: number; phase: number; heading?: SaacDir }
 type Shot = { x: number; y: number; vx: number; vy: number; r: number; life: number; dmg: number; friendly: boolean; pierce: boolean; homing: boolean; hit: Set<Enemy>; text?: string }
-type Pickup = { kind: 'coin' | 'heart' | 'item' | 'portal'; x: number; y: number; item?: Item; price?: number }
+type Pickup = { kind: 'coin' | 'heart' | 'item' | 'portal' | 'bomb'; x: number; y: number; item?: Item; price?: number }
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string }
+type Bomb = { x: number; y: number; t: number }
 
 type Options = {
   seed: string
   daily: boolean
   difficulty: Difficulty
   startHearts: number
+  startBombs: number
   floors: number
   onEnd: (r: GameResult) => void
   onSound?: (s: SoundName) => void
   /** Étage courant, pour permettre au composant React de changer la musique d'ambiance. */
   onFloorChange?: (floor: number) => void
-  /** Sprites/tileset personnalisés uploadés dans l'admin ; clés manquantes = art intégré. */
-  sprites?: SpriteOverrides
+  /** Sprites/tileset embarqués (public/Game/Asset The Ratsu). */
+  assets: RatsuAssets
 }
 
 const DIFF: Record<Difficulty, number> = { easy: 0.8, normal: 1, hard: 1.3 }
@@ -61,13 +63,17 @@ export class Game {
   private items: Item[] = []
   private px = CX
   private py = CY
-  private facingLeft = false
+  private playerDir: PlayerDir = 'down'
+  private animTimer = 0
   private invuln = 0
   private cooldown = 0
   private enemies: Enemy[] = []
   private shots: Shot[] = []
   private pickups: Pickup[] = []
   private particles: Particle[] = []
+  private bombs: number
+  private activeBombs: Bomb[] = []
+  private floorTiles = new Map<HTMLImageElement, HTMLCanvasElement>()
   private message: { text: string; t: number } | null = null
   private playTime = 0
   private startedAt = 0
@@ -84,6 +90,7 @@ export class Game {
     this.m = DIFF[opts.difficulty]
     this.stats = { ...BASE_STATS, maxHearts: opts.startHearts }
     this.hearts = opts.startHearts
+    this.bombs = opts.startBombs
   }
 
   start() {
@@ -100,11 +107,6 @@ export class Game {
     this.enterRoom(this.floor.start, null)
     this.say(`Étage ${index + 1}${index + 1 === this.opts.floors ? ' — dernier !' : ''}`)
     this.opts.onFloorChange?.(index + 1)
-  }
-
-  /** Image personnalisée pour cette clé, si l'admin en a fourni une (sinon `null`). */
-  private ov(key: string): HTMLImageElement | null {
-    return this.opts.sprites?.[key] ?? null
   }
 
   private enterRoom(room: Room, from: Dir | null) {
@@ -146,7 +148,7 @@ export class Game {
       this.say(f % 2 === 0 ? 'BOSS : la Méga Pop-up d’erreur !' : 'BOSS : le Poisson-lune géant !')
       return
     }
-    const pool: EnemyKind[] = ['goldfish', 'bubble', 'cursor', ...(f >= 1 ? (['popup', 'lag'] as EnemyKind[]) : []), ...(f >= 2 ? (['troll'] as EnemyKind[]) : [])]
+    const pool: EnemyKind[] = ['blob', 'saac']
     const count = Math.min(9, this.rng.int(2, 4) + f)
     for (let i = 0; i < count; i++) {
       const kind = this.rng.pick(pool)
@@ -157,9 +159,8 @@ export class Game {
         y = TOP + this.rng.int(1, ROWS - 2) * TILE + TILE / 2
         if (Math.hypot(x - this.px, y - this.py) > 70 && !this.solidAt(x, y)) break
       }
-      const hp = ({ goldfish: 3, bubble: 2, popup: 4, cursor: 2, lag: 3, troll: 4, boss: 0 }[kind] + f * 0.6) * this.m
-      const ang = this.rng.next() * Math.PI * 2
-      this.enemies.push({ kind, x, y, r: kind === 'popup' ? 9 : 7, hp, maxHp: hp, vx: Math.cos(ang) * 60, vy: Math.sin(ang) * 60, t: this.rng.next() * 2, flash: 0, phase: this.rng.next() * 6 })
+      const hp = ({ blob: 4, saac: 3, boss: 0 }[kind] + f * 0.6) * this.m
+      this.enemies.push({ kind, x, y, r: kind === 'blob' ? 8 : 7, hp, maxHp: hp, vx: 0, vy: 0, t: this.rng.next() * 2, flash: 0, phase: this.rng.next() * 6 })
     }
   }
 
@@ -220,7 +221,12 @@ export class Game {
     // Joueur
     const s = this.stats
     const mv = this.input.move
-    if (mv.x) this.facingLeft = mv.x < 0
+    if (Math.abs(mv.x) > 0.05 || Math.abs(mv.y) > 0.05) {
+      this.playerDir = Math.abs(mv.x) > Math.abs(mv.y) ? (mv.x < 0 ? 'left' : 'right') : mv.y < 0 ? 'up' : 'down'
+      this.animTimer += dt
+    } else {
+      this.animTimer = 0
+    }
     const p = { x: this.px, y: this.py }
     this.moveCircle(p, 6, mv.x * s.speed * dt, mv.y * s.speed * dt, true)
     this.px = p.x
@@ -236,9 +242,15 @@ export class Game {
         const a = base + (i - (n - 1) / 2) * 0.16
         this.shots.push({ x: this.px, y: this.py - 4, vx: Math.cos(a) * s.shotSpeed + mv.x * 20, vy: Math.sin(a) * s.shotSpeed + mv.y * 20, r: 3.5, life: s.range, dmg: s.damage, friendly: true, pierce: s.piercing, homing: s.homing, hit: new Set() })
       }
-      if (aim.x) this.facingLeft = aim.x < 0
       this.opts.onSound?.('shoot')
     }
+    if (this.input.consumeBomb() && this.bombs > 0) {
+      this.bombs--
+      this.activeBombs.push({ x: this.px, y: this.py, t: 1.5 })
+    }
+    for (const b of this.activeBombs) b.t -= dt
+    for (const b of this.activeBombs.filter((b) => b.t <= 0)) this.explodeBomb(b)
+    this.activeBombs = this.activeBombs.filter((b) => b.t > 0)
 
     // Changement de salle
     if (this.room.cleared) {
@@ -294,6 +306,27 @@ export class Game {
     if (this.hearts <= 0) this.end(false)
   }
 
+  /** Dégâts aux ennemis + destruction des rochers dans le rayon, dégâts au joueur si trop proche. */
+  private explodeBomb(b: Bomb) {
+    const RADIUS = 40
+    this.opts.onSound?.('hurt')
+    this.burst(b.x, b.y, '#ffb347', 22)
+    this.burst(b.x, b.y, '#ff5a7a', 14)
+    for (const e of this.enemies) {
+      if (Math.hypot(e.x - b.x, e.y - b.y) > RADIUS + e.r) continue
+      e.hp -= 8
+      e.flash = 0.15
+      if (e.hp <= 0) this.killEnemy(e)
+    }
+    this.enemies = this.enemies.filter((e) => e.hp > 0)
+    this.room.rocks = this.room.rocks.filter(([rx, ry]) => {
+      const cx = LEFT + rx * TILE + TILE / 2
+      const cy = TOP + ry * TILE + TILE / 2
+      return Math.hypot(cx - b.x, cy - b.y) >= RADIUS
+    })
+    if (Math.hypot(this.px - b.x, this.py - b.y) < RADIUS) this.hurtPlayer()
+  }
+
   private end(won: boolean) {
     this.state = won ? 'win' : 'dead'
     if (won) this.score += 1000 + Math.max(0, Math.round(600 - this.playTime)) // bonus de rapidité
@@ -323,54 +356,30 @@ export class Game {
       const toP = Math.atan2(this.py - e.y, this.px - e.x)
       const dist = Math.hypot(this.px - e.x, this.py - e.y)
       switch (e.kind) {
-        case 'goldfish': {
-          const sp = 38 * m
-          e.vx = Math.cos(toP) * sp
-          e.vy = Math.sin(toP) * sp + Math.sin(this.time * 4 + e.phase) * 10
-          this.moveCircle(e, e.r, e.vx * dt, e.vy * dt)
-          break
-        }
-        case 'bubble': {
-          if (this.moveCircle(e, e.r, e.vx * 0.5 * dt * m, e.vy * 0.5 * dt * m)) {
-            const a = this.rng.next() * Math.PI * 2
-            e.vx = Math.cos(a) * 60
-            e.vy = Math.sin(a) * 60
+        case 'blob': {
+          // Saute par à-coups vers le joueur (mouvement uniquement pendant la phase « en l'air »
+          // du cycle, synchronisé avec l'animation du rendu) et crache une bille rouge de temps en temps.
+          e.phase += dt * 3.2 * m
+          const hop = Math.max(0, Math.sin(e.phase))
+          this.moveCircle(e, e.r, Math.cos(toP) * 26 * m * hop * dt, Math.sin(toP) * 26 * m * hop * dt)
+          if (e.t <= 0) {
+            e.t = 2.4 / m
+            this.enemyShot(e, toP, 80 * m)
           }
           break
         }
-        case 'cursor': {
-          const bx = this.moveCircle(e, e.r, e.vx * 1.6 * dt * m, 0)
-          const by = this.moveCircle(e, e.r, 0, e.vy * 1.6 * dt * m)
-          if (bx) e.vx = -e.vx
-          if (by) e.vy = -e.vy
+        case 'saac': {
+          // Ne se déplace que sur l'une des 4 diagonales, celle qui rapproche le plus du joueur.
+          const dx = this.px - e.x
+          const dy = this.py - e.y
+          const heading: SaacDir = dx >= 0 ? (dy >= 0 ? 'downRight' : 'upRight') : dy >= 0 ? 'downLeft' : 'upLeft'
+          e.heading = heading
+          const hx = heading === 'downRight' || heading === 'upRight' ? 1 : -1
+          const hy = heading === 'downRight' || heading === 'downLeft' ? 1 : -1
+          const sp = 44 * m * Math.SQRT1_2
+          this.moveCircle(e, e.r, hx * sp * dt, hy * sp * dt)
           break
         }
-        case 'popup':
-          if (e.t <= 0) {
-            e.t = 2.2 / m
-            this.enemyShot(e, toP, 85 * m)
-          }
-          break
-        case 'lag':
-          if (e.t <= 0) {
-            e.t = 3 / m
-            const a = this.rng.next() * Math.PI * 2
-            const nx = this.px + Math.cos(a) * 60
-            const ny = this.py + Math.sin(a) * 60
-            if (nx > LEFT + 10 && nx < RIGHT - 10 && ny > TOP + 10 && ny < BOTTOM - 10 && !this.solidAt(nx, ny)) {
-              this.burst(e.x, e.y, '#9be15d', 6)
-              e.x = nx
-              e.y = ny
-            }
-          }
-          break
-        case 'troll':
-          this.moveCircle(e, e.r, Math.cos(toP) * 18 * m * dt, Math.sin(toP) * 18 * m * dt)
-          if (e.t <= 0) {
-            e.t = 2.6 / m
-            for (const off of [-0.3, 0, 0.3]) this.enemyShot(e, toP + off, 70 * m, 'lol')
-          }
-          break
         case 'boss': {
           e.phase += dt
           const pattern = Math.floor(e.phase / 3.2) % 3
@@ -387,7 +396,7 @@ export class Game {
             } else {
               e.t = 2.4
               if (this.enemies.length < 6) {
-                for (const side of [-1, 1]) this.enemies.push({ kind: 'bubble', x: e.x + side * 24, y: e.y + 10, r: 7, hp: 2 * m, maxHp: 2 * m, vx: side * 60, vy: 40, t: 0, flash: 0, phase: 0 })
+                for (const side of [-1, 1]) this.enemies.push({ kind: 'saac', x: e.x + side * 24, y: e.y + 10, r: 7, hp: 2 * m, maxHp: 2 * m, vx: 0, vy: 0, t: 0, flash: 0, phase: 0 })
               }
             }
           }
@@ -439,9 +448,11 @@ export class Game {
     this.kills++
     this.score += e.kind === 'boss' ? 0 : 10
     this.opts.onSound?.('pop')
-    this.burst(e.x, e.y, e.kind === 'goldfish' ? '#ff8a3d' : '#bfe8ff', 12)
-    if (e.kind === 'bubble') for (let i = 0; i < 4; i++) this.enemyShot(e, (i / 4) * Math.PI * 2 + Math.PI / 4, 70 * this.m)
+    this.burst(e.x, e.y, e.kind === 'blob' ? '#ff8a3d' : '#bfe8ff', 12)
+    // The Saac disperse 4 billes rouges à sa mort (croix diagonale, comme son propre déplacement).
+    if (e.kind === 'saac') for (let i = 0; i < 4; i++) this.enemyShot(e, (i / 4) * Math.PI * 2 + Math.PI / 4, 70 * this.m)
     if (e.kind !== 'boss' && this.rng.chance(0.3 + this.stats.luck * 0.08)) this.pickups.push({ kind: 'coin', x: e.x, y: e.y })
+    else if (e.kind !== 'boss' && this.rng.chance(0.08)) this.pickups.push({ kind: 'bomb', x: e.x, y: e.y })
     else if (e.kind !== 'boss' && this.rng.chance(0.04)) this.pickups.push({ kind: 'heart', x: e.x, y: e.y })
   }
 
@@ -467,6 +478,9 @@ export class Game {
       } else if (p.kind === 'heart') {
         if (this.hearts >= this.stats.maxHearts && !p.price) continue
         this.hearts = Math.min(this.stats.maxHearts, this.hearts + 1)
+        this.opts.onSound?.('coin')
+      } else if (p.kind === 'bomb') {
+        this.bombs++
         this.opts.onSound?.('coin')
       } else if (p.kind === 'item' && p.item) {
         p.item.apply(this.stats)
@@ -515,24 +529,26 @@ export class Game {
     if (this.state === 'win') this.renderWin()
   }
 
+  /** Version pré-réduite (mise en cache) d'une texture de sol, pour un motif répété net. */
+  private tileFor(img: HTMLImageElement): HTMLCanvasElement {
+    let t = this.floorTiles.get(img)
+    if (!t) {
+      t = tileCanvas(img, TILE)
+      this.floorTiles.set(img, t)
+    }
+    return t
+  }
+
   private renderRoom() {
     const c = this.ctx
-    // Eau et damier doux (ou tileset personnalisé)
-    const floorTile = this.ov('floorTile')
-    if (floorTile) {
-      const pat = c.createPattern(floorTile, 'repeat')
-      if (pat) {
-        c.fillStyle = pat
-        c.fillRect(LEFT, TOP, COLS * TILE, ROWS * TILE)
-      }
-    } else {
-      const g = c.createLinearGradient(0, TOP, 0, BOTTOM)
-      g.addColorStop(0, '#7fd0ff')
-      g.addColorStop(1, '#2a86e0')
-      c.fillStyle = g
+    // Sol : texture selon le type de salle (boutique/trésor ont toujours la leur, les salles
+    // normales/boss partagent le thème tiré pour tout l'étage — voir Floor.floorTheme).
+    const floors = this.opts.assets.floors
+    const floorImg = this.room.kind === 'shop' ? floors.shop : this.room.kind === 'treasure' ? floors.itemroom : floors.normal[this.floor.floorTheme]
+    const pat = c.createPattern(this.tileFor(floorImg), 'repeat')
+    if (pat) {
+      c.fillStyle = pat
       c.fillRect(LEFT, TOP, COLS * TILE, ROWS * TILE)
-      c.fillStyle = 'rgba(255,255,255,0.07)'
-      for (let x = 0; x < COLS; x++) for (let y = 0; y < ROWS; y++) if ((x + y) % 2 === 0) c.fillRect(LEFT + x * TILE, TOP + y * TILE, TILE, TILE)
     }
     // Rayons de lumière
     c.fillStyle = 'rgba(255,255,255,0.08)'
@@ -545,18 +561,14 @@ export class Game {
       c.lineTo(x - 50, BOTTOM)
       c.fill()
     }
-    // Murs : verre épais glossy (ou tileset personnalisé)
-    const wallTile = this.ov('wallTile')
-    const wallPattern = wallTile && c.createPattern(wallTile, 'repeat')
-    c.fillStyle = wallPattern || (this.room.kind === 'boss' ? '#3a1d5c' : this.room.kind === 'shop' ? '#1a6f5c' : '#123c72')
+    // Murs : verre épais glossy
+    c.fillStyle = this.room.kind === 'boss' ? '#3a1d5c' : this.room.kind === 'shop' ? '#1a6f5c' : '#123c72'
     c.fillRect(0, 0, W, TOP)
     c.fillRect(0, BOTTOM, W, TILE)
     c.fillRect(0, 0, LEFT, H)
     c.fillRect(RIGHT, 0, TILE, H)
-    if (!wallPattern) {
-      c.fillStyle = 'rgba(255,255,255,0.18)'
-      c.fillRect(0, 0, W, 4)
-    }
+    c.fillStyle = 'rgba(255,255,255,0.18)'
+    c.fillRect(0, 0, W, 4)
     c.strokeStyle = '#bfe8ff'
     c.lineWidth = 2
     c.strokeRect(LEFT - 1, TOP - 1, COLS * TILE + 2, ROWS * TILE + 2)
@@ -580,15 +592,10 @@ export class Game {
     door(CX - TILE / 2, BOTTOM, TILE, TILE - 2, 'down')
     door(2, CY - TILE / 2, LEFT - 2, TILE, 'left')
     door(RIGHT, CY - TILE / 2, TILE - 2, TILE, 'right')
-    // Rochers : coraux-bulles roses (ou image personnalisée)
-    const rockTile = this.ov('rockTile')
+    // Rochers : coraux-bulles roses (destructibles à la bombe)
     for (const [rx, ry] of this.room.rocks) {
       const x = LEFT + rx * TILE
       const y = TOP + ry * TILE
-      if (rockTile) {
-        c.drawImage(rockTile, x, y, TILE, TILE)
-        continue
-      }
       c.fillStyle = '#ff7eb6'
       c.beginPath()
       c.arc(x + 8, y + 14, 7, 0, Math.PI * 2)
@@ -600,37 +607,24 @@ export class Game {
     }
   }
 
+  /** Frame courante du cycle de marche (5 images) : avance avec le temps de déplacement, tient la 1ère à l'arrêt. */
+  private playerFrame(): HTMLImageElement {
+    const frames = this.opts.assets.player[this.playerDir]
+    if (this.animTimer <= 0) return frames[0]
+    const WALK_FPS = 9
+    return frames[Math.floor(this.animTimer * WALK_FPS) % frames.length]
+  }
+
   private renderPlayer() {
     const c = this.ctx
     if (this.invuln > 0 && Math.floor(this.time * 20) % 2 === 0) return
-    const bob = Math.abs(this.input.move.x) + Math.abs(this.input.move.y) > 0 ? Math.round(Math.sin(this.time * 14)) : 0
     c.fillStyle = 'rgba(11,26,58,0.35)'
     c.beginPath()
     c.ellipse(this.px, this.py + 8, 6, 2, 0, 0, Math.PI * 2)
     c.fill()
-    const custom = this.ov('player')
-    if (custom) {
-      const size = 20
-      c.save()
-      c.translate(Math.round(this.px), Math.round(this.py - 1 + bob))
-      if (this.facingLeft) c.scale(-1, 1)
-      c.drawImage(custom, -size / 2, -size / 2, size, size)
-      c.restore()
-      return
-    }
-    const sp = sprites()
-    const img = this.facingLeft ? sp.playerLeft : sp.player
-    c.drawImage(img, Math.round(this.px - 6), Math.round(this.py - 9 + bob))
-  }
-
-  private static readonly ENEMY_SPRITE_KEYS: Record<EnemyKind, string> = {
-    goldfish: 'enemyGoldfish',
-    bubble: 'enemyBubble',
-    popup: 'enemyPopup',
-    cursor: 'enemyCursor',
-    lag: 'enemyLag',
-    troll: 'enemyTroll',
-    boss: 'bossPopup', // résolu dynamiquement ci-dessous (pop-up ou soleil selon l'étage)
+    const img = this.playerFrame()
+    const { w, h } = fitSize(img.width, img.height, 24)
+    c.drawImage(img, Math.round(this.px - w / 2), Math.round(this.py - h / 2 - 2), w, h)
   }
 
   private renderEnemy(e: Enemy) {
@@ -638,101 +632,29 @@ export class Game {
     const x = Math.round(e.x)
     const y = Math.round(e.y)
     const flash = e.flash > 0
-    const overrideKey = e.kind === 'boss' ? (this.floorIndex % 2 === 0 ? 'bossPopup' : 'bossSun') : Game.ENEMY_SPRITE_KEYS[e.kind]
-    const custom = this.ov(overrideKey)
-    if (custom) {
-      const size = e.kind === 'boss' ? 56 : e.r * 2.6
-      const dir = e.kind === 'goldfish' && this.px < e.x ? -1 : 1
-      c.save()
-      c.translate(x, y)
-      c.scale(dir, 1)
-      c.drawImage(custom, -size / 2, -size / 2, size, size)
-      c.restore()
-      if (e.kind === 'boss') {
-        c.fillStyle = '#1b2240'
-        c.fillRect(LEFT + 60, BOTTOM - 10, COLS * TILE - 120, 6)
-        c.fillStyle = '#ff5a7a'
-        c.fillRect(LEFT + 61, BOTTOM - 9, (COLS * TILE - 122) * Math.max(0, e.hp / e.maxHp), 4)
-      }
-      return
-    }
     switch (e.kind) {
-      case 'goldfish': {
-        const dir = this.px < e.x ? -1 : 1
+      case 'blob': {
+        // Saut : s'étire en l'air, s'aplatit à l'atterrissage, synchronisé avec le déplacement.
+        const img = this.opts.assets.blob
+        const hop = Math.max(0, Math.sin(e.phase))
+        const { w, h } = fitSize(img.width, img.height, 22)
         c.save()
-        c.translate(x, y)
-        c.scale(dir, 1)
-        c.fillStyle = flash ? '#fff' : '#ff8a3d'
-        c.beginPath()
-        c.ellipse(0, 0, 7, 5, 0, 0, Math.PI * 2)
-        c.fill()
-        c.beginPath()
-        c.moveTo(-5, 0)
-        c.lineTo(-11, -5)
-        c.lineTo(-11, 5)
-        c.fill()
-        c.fillStyle = '#fff'
-        c.fillRect(2, -3, 3, 3)
-        c.fillStyle = '#1b2240'
-        c.fillRect(3, -2, 2, 2)
-        c.fillStyle = '#b3261e' // sourcils fâchés
-        c.fillRect(1, -5, 4, 1)
+        c.translate(x, y - hop * 6)
+        c.scale(1 - hop * 0.16, 1 + hop * 0.16)
+        c.filter = flash ? 'brightness(2.2) saturate(0)' : 'none'
+        c.drawImage(img, -w / 2, -h / 2, w, h)
         c.restore()
         break
       }
-      case 'bubble':
-        c.strokeStyle = flash ? '#fff' : '#e6f7ff'
-        c.lineWidth = 1.5
-        c.beginPath()
-        c.arc(x, y, e.r, 0, Math.PI * 2)
-        c.stroke()
-        c.fillStyle = 'rgba(255,255,255,0.5)'
-        c.fillRect(x - 4, y - 4, 3, 2)
+      case 'saac': {
+        const img = this.opts.assets.saac[e.heading ?? 'downRight']
+        const { w, h } = fitSize(img.width, img.height, 22)
+        c.save()
+        c.filter = flash ? 'brightness(2.2) saturate(0)' : 'none'
+        c.drawImage(img, x - w / 2, y - h / 2, w, h)
+        c.restore()
         break
-      case 'popup':
-        c.fillStyle = flash ? '#fff' : '#eaf5ff'
-        c.fillRect(x - 11, y - 8, 22, 16)
-        c.fillStyle = '#3fa9f5'
-        c.fillRect(x - 11, y - 8, 22, 4)
-        c.fillStyle = '#ff5a7a'
-        c.fillRect(x + 7, y - 7, 3, 2)
-        c.fillStyle = '#d81e4b'
-        c.font = 'bold 8px monospace'
-        c.fillText('!', x - 2, y + 6)
-        break
-      case 'cursor':
-        c.fillStyle = flash ? '#ff5a7a' : '#fff'
-        c.strokeStyle = '#1b2240'
-        c.beginPath()
-        c.moveTo(x - 4, y - 7)
-        c.lineTo(x - 4, y + 5)
-        c.lineTo(x - 1, y + 2)
-        c.lineTo(x + 2, y + 7)
-        c.lineTo(x + 4, y + 6)
-        c.lineTo(x + 1, y + 1)
-        c.lineTo(x + 5, y + 1)
-        c.closePath()
-        c.fill()
-        c.stroke()
-        break
-      case 'lag':
-        for (let i = 0; i < 4; i++) {
-          c.fillStyle = ['#9be15d', '#ff7eb6', '#2ec4c9', '#ffd35c'][i]
-          c.fillRect(x - 7 + ((i * 5 + Math.floor(this.time * 30)) % 6) - 3, y - 7 + i * 4, 14, 3)
-        }
-        break
-      case 'troll':
-        c.fillStyle = flash ? '#fff' : '#f4f8ff'
-        c.beginPath()
-        c.ellipse(x, y, 9, 7, 0, 0, Math.PI * 2)
-        c.fill()
-        c.fillStyle = '#1b2240'
-        c.fillRect(x - 4, y - 2, 2, 2)
-        c.fillRect(x + 2, y - 2, 2, 2)
-        c.fillRect(x - 3, y + 3, 6, 1)
-        c.fillRect(x - 5, y - 4, 3, 1)
-        c.fillRect(x + 2, y - 4, 3, 1)
-        break
+      }
       case 'boss':
         if (this.floorIndex % 2 === 0) {
           c.fillStyle = flash ? '#fff' : '#eaf5ff'
@@ -811,23 +733,15 @@ export class Game {
       return
     }
     if (p.kind === 'coin') {
-      const custom = this.ov('pickupCoin')
-      if (custom) c.drawImage(custom, p.x - 8, p.y - 8 + bob, 16, 16)
-      else {
-        c.fillStyle = '#ffd35c'
-        c.beginPath()
-        c.moveTo(p.x, p.y - 5 + bob)
-        c.lineTo(p.x + 5, p.y + 3 + bob)
-        c.lineTo(p.x - 5, p.y + 3 + bob)
-        c.fill()
-        c.fillStyle = '#fff4c2'
-        c.fillRect(p.x - 1, p.y - 2 + bob, 2, 2)
-      }
+      const img = this.opts.assets.coin
+      const { w, h } = fitSize(img.width, img.height, 14)
+      c.drawImage(img, p.x - w / 2, p.y - h / 2 + bob, w, h)
     }
-    if (p.kind === 'heart') {
-      const custom = this.ov('pickupHeart')
-      if (custom) c.drawImage(custom, p.x - 8, p.y - 8 + bob, 16, 16)
-      else drawHeart(c, Math.round(p.x - 3), Math.round(p.y - 3 + bob), 1)
+    if (p.kind === 'heart') drawHeart(c, Math.round(p.x - 3), Math.round(p.y - 3 + bob), 1)
+    if (p.kind === 'bomb') {
+      const img = this.opts.assets.bomb.icon
+      const { w, h } = fitSize(img.width, img.height, 14)
+      c.drawImage(img, p.x - w / 2, p.y - h / 2 + bob, w, h)
     }
     if (p.kind === 'item' && p.item) {
       c.fillStyle = '#eaf5ff'
@@ -841,6 +755,22 @@ export class Game {
       c.textAlign = 'center'
       c.fillText(p.item.glyph, p.x, p.y + 3 + bob)
       c.textAlign = 'left'
+      // Description au survol : visible dès que le joueur s'approche (boutique / salle trésor).
+      if (Math.hypot(p.x - this.px, p.y - this.py) < 26) {
+        const label = `${p.item.name} — ${p.item.desc}`
+        c.font = '7px monospace'
+        const lw = c.measureText(label).width + 10
+        const ty = p.y - 22
+        c.fillStyle = 'rgba(11,26,58,0.85)'
+        c.fillRect(p.x - lw / 2, ty - 8, lw, 12)
+        c.strokeStyle = 'rgba(255,255,255,0.6)'
+        c.lineWidth = 1
+        c.strokeRect(p.x - lw / 2 + 0.5, ty - 8 + 0.5, lw - 1, 11)
+        c.fillStyle = '#fff'
+        c.textAlign = 'center'
+        c.fillText(label, p.x, ty)
+        c.textAlign = 'left'
+      }
     }
     if (p.price) {
       c.fillStyle = '#fff'
@@ -857,6 +787,10 @@ export class Game {
     c.fillStyle = '#ffd35c'
     c.font = '8px monospace'
     c.fillText(`◆ ${this.coins}`, 6, 22)
+    const bombImg = this.opts.assets.bombContainer
+    c.drawImage(bombImg, 4, 26, 12, 12)
+    c.fillStyle = '#eaf5ff'
+    c.fillText(`${this.bombs}`, 18, 35)
     c.fillStyle = '#eaf5ff'
     c.fillText(`Étage ${this.floorIndex + 1}/${this.opts.floors}  ·  ${Math.round(this.score)} pts`, 110, 11)
     if (this.opts.daily) {
@@ -927,7 +861,11 @@ export class Game {
     c.font = '10px sans-serif'
     c.fillStyle = '#fff'
     c.fillText(this.opts.daily ? '✦ Défi du jour ✦' : 'Mode libre', CX, 100)
-    c.drawImage(this.ov('player') ?? sprites().player, CX - 12, 112, 24, 28)
+    {
+      const img = this.opts.assets.player.down[0]
+      const { w, h } = fitSize(img.width, img.height, 24)
+      c.drawImage(img, CX - w / 2, 112, w, h)
+    }
     if (Math.floor(this.time * 2) % 2 === 0) {
       c.font = 'bold 10px sans-serif'
       c.fillText('Entrée / A / touche l’écran pour plonger', CX, 165)

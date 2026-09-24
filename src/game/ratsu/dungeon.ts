@@ -20,7 +20,7 @@ export type Room = {
   pickupsTaken: boolean
 }
 
-export type Floor = { rooms: Map<string, Room>; start: Room; index: number }
+export type Floor = { rooms: Map<string, Room>; start: Room; index: number; floorTheme: number }
 
 export const COLS = 13 // tuiles jouables en largeur
 export const ROWS = 7 // tuiles jouables en hauteur
@@ -85,7 +85,7 @@ export function generateFloor(rng: Rng, index: number): Floor {
       if (layout === 4) rocks.push([5, 2], [7, 2], [5, 4], [7, 4])
       r.rocks = rocks
     }
-    return { rooms, start, index }
+    return { rooms, start, index, floorTheme: rng.int(0, 3) }
   }
   throw new Error('Génération impossible')
 }
