@@ -17,7 +17,7 @@ export function SendScheduleToDiscord() {
 
   return (
     <div style={{ margin: '4px 0 16px', padding: 12, borderRadius: 8, background: 'var(--theme-elevation-50)' }}>
-      <p style={{ marginTop: 0, fontSize: 13, opacity: 0.8 }}>Le planning « manuel » ci-dessous est envoyé automatiquement sur Discord à chaque changement. Renvoi manuel :</p>
+      <p style={{ marginTop: 0, fontSize: 13, opacity: 0.8 }}>Le planning ci-dessous est envoyé automatiquement sur Discord à chaque changement. Renvoi manuel :</p>
       <button type="button" className="btn btn--style-secondary btn--size-small" onClick={run} disabled={busy}>
         📤 Envoyer ce planning sur Discord
       </button>

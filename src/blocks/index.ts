@@ -43,64 +43,10 @@ export const ScheduleBlock: Block = {
       label: 'Source',
       type: 'select',
       defaultValue: 'auto',
+      admin: { description: 'Le contenu du planning se gère dans Réglages > Planning (dates réelles) — ce bloc choisit juste où l’afficher sur la page.' },
       options: [
-        { label: 'Twitch, puis saisie manuelle si indisponible', value: 'auto' },
-        { label: 'Saisie manuelle uniquement', value: 'manual' },
-      ],
-    },
-    {
-      name: 'discordAction',
-      type: 'ui',
-      admin: { components: { Field: '@/components/admin/SendScheduleToDiscord#SendScheduleToDiscord' } },
-    },
-    {
-      name: 'manual',
-      label: 'Planning manuel',
-      type: 'array',
-      fields: [
-        {
-          type: 'row',
-          fields: [
-            {
-              name: 'day',
-              label: 'Jour',
-              type: 'select',
-              required: true,
-              options: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((d) => ({ label: d, value: d })),
-            },
-            { name: 'time', label: 'Heure', type: 'text', required: true, admin: { placeholder: '20h30' } },
-            { name: 'title', label: 'Programme (affiché sur la carte)', type: 'text', required: true, admin: { placeholder: 'Ex. Soirée dessin chill' } },
-            {
-              name: 'kind',
-              label: 'Type (choisit l’icône si pas de miniature)',
-              type: 'select',
-              defaultValue: 'game',
-              options: [
-                { label: 'Jeu vidéo', value: 'game' },
-                { label: 'Dessin', value: 'art' },
-                { label: 'Musique', value: 'music' },
-                { label: 'Discussion', value: 'chat' },
-              ],
-            },
-          ],
-        },
-        {
-          type: 'row',
-          fields: [
-            {
-              name: 'game',
-              label: 'Catégorie Twitch (pour la miniature officielle)',
-              type: 'text',
-              admin: {
-                width: '60%',
-                placeholder: 'Ex. The Binding of Isaac, Just Chatting, Art…',
-                description: 'Cherche n’importe quelle catégorie Twitch : un jeu, mais aussi « Just Chatting », « Art », « Music »… Laisse vide pour garder une simple icône.',
-                components: { Field: '@/components/admin/GamePicker#GamePicker' },
-              },
-            },
-            { name: 'boxArtUrl', label: 'Miniature (auto)', type: 'text', admin: { width: '40%', readOnly: true } },
-          ],
-        },
+        { label: 'Twitch, puis planning enregistré si indisponible', value: 'auto' },
+        { label: 'Planning enregistré uniquement', value: 'manual' },
       ],
     },
   ],

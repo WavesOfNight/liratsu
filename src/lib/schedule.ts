@@ -1,17 +1,16 @@
 /**
- * Utilitaires partagés autour du bloc « Planning » de la page Accueil : extraction des
- * dates saisies manuellement, détection de changement (pour l'envoi Discord et
- * l'archivage), conversion vers le format carte utilisé par l'image Discord.
+ * Utilitaires partagés autour du planning des streams (global « schedule ») : extraction
+ * des créneaux, détection de changement (pour l'envoi Discord et l'archivage), tri et
+ * mise en forme pour l'affichage / l'image Discord.
  */
-import type { HomePage } from '@/payload-types'
+import { getPayloadClient } from './payload'
 import type { ScheduleItemForDiscord } from './discord'
 
-export const DAYS_ORDER = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'] as const
 export const KIND_ICON: Record<string, string> = { game: '🎮', art: '🎨', music: '🎵', chat: '💬' }
 
-export type ManualScheduleItem = {
+export type ScheduleItem = {
   id?: string | null
-  day: string
+  date: string
   time: string
   title: string
   kind?: string | null
@@ -19,48 +18,46 @@ export type ManualScheduleItem = {
   boxArtUrl?: string | null
 }
 
-/** Le bloc « schedule » de la page Accueil, s'il existe. */
-export function findScheduleBlock(home: Pick<HomePage, 'layout'> | null | undefined) {
-  return home?.layout?.find((b): b is Extract<NonNullable<HomePage['layout']>[number], { blockType: 'schedule' }> => b.blockType === 'schedule') ?? null
-}
-
-export function extractManualSchedule(home: Pick<HomePage, 'layout'> | null | undefined): ManualScheduleItem[] {
-  return findScheduleBlock(home)?.manual ?? []
+/** Extrait les créneaux d'un document du global « schedule » (ou de sa version précédente). */
+export function extractScheduleItems(schedule: { items?: ScheduleItem[] | null } | null | undefined): ScheduleItem[] {
+  return schedule?.items ?? []
 }
 
 /** Compare deux plannings en ignorant les identifiants internes (générés côté DB). */
-export function scheduleSignature(items: ManualScheduleItem[]): string {
+export function scheduleSignature(items: ScheduleItem[]): string {
   return JSON.stringify(
     [...items]
-      .map((i) => ({ day: i.day, time: i.time, title: i.title, kind: i.kind ?? 'game', game: i.game ?? '' }))
-      .sort((a, b) => (a.day + a.time).localeCompare(b.day + b.time)),
+      .map((i) => ({ date: (i.date ?? '').slice(0, 10), time: i.time, title: i.title, kind: i.kind ?? 'game', game: i.game ?? '' }))
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)),
   )
 }
 
-export function scheduleChanged(prev: ManualScheduleItem[], next: ManualScheduleItem[]): boolean {
+export function scheduleChanged(prev: ScheduleItem[], next: ScheduleItem[]): boolean {
   return scheduleSignature(prev) !== scheduleSignature(next)
 }
 
-export function sortedByDay<T extends { day: string }>(items: T[]): T[] {
-  return [...items].sort((a, b) => DAYS_ORDER.indexOf(a.day as (typeof DAYS_ORDER)[number]) - DAYS_ORDER.indexOf(b.day as (typeof DAYS_ORDER)[number]))
+export function sortedByDate<T extends { date: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => a.date.localeCompare(b.date))
 }
 
-export function toDiscordItems(items: ManualScheduleItem[]): ScheduleItemForDiscord[] {
-  return sortedByDay(items).map((i) => ({ day: i.day, time: i.time, title: i.title, icon: KIND_ICON[i.kind ?? 'game'] ?? '🎮', boxArtUrl: i.boxArtUrl }))
+/** Ne garde que les créneaux dont la date n'est pas encore passée (fuseau Europe/Paris). */
+export function upcoming<T extends { date: string }>(items: T[], from = new Date()): T[] {
+  const todayIso = new Date(Date.UTC(from.getFullYear(), from.getMonth(), from.getDate())).toISOString().slice(0, 10)
+  return items.filter((i) => i.date.slice(0, 10) >= todayIso)
 }
 
-/** Date (ISO, minuit Europe/Paris) de la dernière occurrence de ce jour de semaine, ≤ `from`. */
-export function lastOccurrenceOf(day: string, from = new Date()): string {
-  const idx = DAYS_ORDER.indexOf(day as (typeof DAYS_ORDER)[number])
-  if (idx === -1) return from.toISOString()
-  // getDay() : 0 = dimanche … 6 = samedi → on aligne sur notre liste (0 = lundi … 6 = dimanche)
-  const todayIdx = (from.getDay() + 6) % 7
-  let delta = todayIdx - idx
-  if (delta < 0) delta += 7
-  const d = new Date(from)
-  d.setDate(d.getDate() - delta)
-  // On repart des champs Y/M/D locaux pour construire un minuit UTC : un simple
-  // setHours(0,0,0,0) + toISOString() ferait reculer d'un jour dans un fuseau
-  // en avance sur UTC (Europe/Paris en été, par ex. minuit local = 22h UTC la veille).
-  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString()
+/** Libellé jour + date en français, ex. « vendredi 26 sept. » (même format que le planning Twitch auto). */
+export function formatScheduleDate(dateIso: string): string {
+  return new Date(dateIso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
+}
+
+export function toDiscordItems(items: ScheduleItem[]): ScheduleItemForDiscord[] {
+  return sortedByDate(items).map((i) => ({ day: formatScheduleDate(i.date), time: i.time, title: i.title, icon: KIND_ICON[i.kind ?? 'game'] ?? '🎮', boxArtUrl: i.boxArtUrl }))
+}
+
+/** Créneaux à venir, triés, prêts pour l'affichage public. */
+export async function getUpcomingScheduleItems(): Promise<ScheduleItem[]> {
+  const payload = await getPayloadClient()
+  const doc = await payload.findGlobal({ slug: 'schedule', depth: 0 })
+  return sortedByDate(upcoming(extractScheduleItems(doc)))
 }

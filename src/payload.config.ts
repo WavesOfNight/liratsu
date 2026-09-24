@@ -21,6 +21,7 @@ import { Integrations } from './globals/Integrations'
 import { LegalIdentity } from './globals/LegalIdentity'
 import { ModerationSettings } from './globals/ModerationSettings'
 import { BiographyPage, HomePage, LinksPage } from './globals/Pages'
+import { Schedule } from './globals/Schedule'
 import { ShopSettings } from './globals/ShopSettings'
 import { SiteSettings } from './globals/SiteSettings'
 import { Theme } from './globals/Theme'
@@ -62,7 +63,7 @@ const { collections, globals } = withActivityLog(
     ActivityLog,
     WebhookEvents,
   ],
-  [SiteSettings, Theme, HomePage, BiographyPage, LinksPage, ShopSettings, EasterEggs, GameSettings, ModerationSettings, LegalIdentity, Integrations],
+  [SiteSettings, Theme, HomePage, BiographyPage, LinksPage, Schedule, ShopSettings, EasterEggs, GameSettings, ModerationSettings, LegalIdentity, Integrations],
 )
 
 export default buildConfig({

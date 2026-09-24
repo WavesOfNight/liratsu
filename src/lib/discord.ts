@@ -158,7 +158,7 @@ export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Prom
           <rect x="${p.x}" y="${p.y}" width="${TILE}" height="${TILE}" rx="14" fill="none" stroke="#ffffff" stroke-width="4"/>
           ${boxArts[i] ? '' : `<rect x="${p.x}" y="${p.y}" width="${TILE}" height="${TILE}" rx="14" fill="#1e6fd9"/><text x="${p.x + TILE / 2}" y="${p.y + TILE / 2 + 24}" text-anchor="middle" font-size="64">${escXml(it.icon)}</text>`}
           <rect x="${p.x}" y="${p.y + TILE - barH}" width="${TILE}" height="${barH}" rx="0" fill="rgba(11,26,58,0.82)"/>
-          <text x="${p.x + 12}" y="${p.y + TILE - barH + 24}" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff">${escXml(truncate(it.day, 16))}</text>
+          <text x="${p.x + 12}" y="${p.y + TILE - barH + 24}" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#ffffff">${escXml(truncate(it.day, 20))}</text>
           <text x="${p.x + TILE - 12}" y="${p.y + TILE - barH + 24}" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#eaf5ff">${escXml(it.time)}</text>
           <text x="${p.x + 12}" y="${p.y + TILE - 12}" font-family="Arial, sans-serif" font-size="14" fill="#ffffff">${escXml(truncate(it.cancelled ? `${it.title} (annulé)` : it.title, 24))}</text>
         </g>`

@@ -9,6 +9,7 @@ import type { BiographyPage, HomePage, Media, SiteSetting } from '@/payload-type
 import { getClips, getLiveStatus, getSchedule } from '@/lib/twitch'
 import { getLatestVideos } from '@/lib/youtube'
 import { absoluteUrl, mediaUrl } from '@/lib/site'
+import { formatScheduleDate, getUpcomingScheduleItems } from '@/lib/schedule'
 import { AeroWindow } from '../AeroWindow'
 import { LogoAero } from '../LogoAero'
 import { RichText } from '../RichText'
@@ -19,7 +20,6 @@ import styles from './blocks.module.css'
 
 type Block = NonNullable<HomePage['layout']>[number] | NonNullable<BiographyPage['layout']>[number]
 
-const DAYS_ORDER = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 const KIND_ICON: Record<string, string> = { game: '🎮', art: '🎨', music: '🎵', chat: '💬' }
 const TIMELINE_ICON: Record<string, string> = { star: '⭐', bubble: '🫧', heart: '💖', pencil: '✏️', note: '🎵', gamepad: '🎮', fish: '🐟' }
 
@@ -72,7 +72,7 @@ async function renderBlock(block: Block, site: SiteSetting, isFirst: boolean): P
     }
     case 'schedule': {
       const twitch = block.source === 'manual' ? null : await getSchedule().catch(() => null)
-      const manual = [...(block.manual ?? [])].sort((a, b) => DAYS_ORDER.indexOf(a.day) - DAYS_ORDER.indexOf(b.day))
+      const manual = twitch?.length ? [] : await getUpcomingScheduleItems().catch(() => [])
       return (
         <AeroWindow title={block.windowTitle || 'Planning des streams'} icon="star">
           {twitch?.length ? (
@@ -95,7 +95,7 @@ async function renderBlock(block: Block, site: SiteSetting, isFirst: boolean): P
           ) : manual.length ? (
             <ul className={styles.scheduleGrid}>
               {manual.map((s) => (
-                <ScheduleCard key={s.id ?? `${s.day}${s.time}`} boxArtUrl={s.boxArtUrl} icon={KIND_ICON[s.kind ?? 'game']} day={s.day} time={s.time} title={s.title} />
+                <ScheduleCard key={s.id ?? `${s.date}${s.time}`} boxArtUrl={s.boxArtUrl} icon={KIND_ICON[s.kind ?? 'game']} day={formatScheduleDate(s.date)} time={s.time} title={s.title} />
               ))}
             </ul>
           ) : (

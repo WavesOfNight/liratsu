@@ -87,16 +87,7 @@ if (!home.layout?.length) {
       layout: [
         { blockType: 'hero', tagline: 'Dessin · Musique · Jeu vidéo', intro: bioText, ctaLabel: 'Regarder le live', ctaUrl: 'https://www.twitch.tv/liratsu', showAvatar: true },
         { blockType: 'liveStatus', windowTitle: 'Live Twitch', showPlayer: true, offlineText: 'Liratsu n’est pas en live pour le moment… viens jeter un œil au planning !' },
-        {
-          blockType: 'schedule',
-          windowTitle: 'Planning des streams',
-          source: 'auto',
-          manual: [
-            { day: 'Mardi', time: '20h30', title: 'Soirée dessin chill', kind: 'art' },
-            { day: 'Jeudi', time: '20h30', title: 'Jeu indé découverte', kind: 'game' },
-            { day: 'Samedi', time: '15h00', title: 'Musique & papotage', kind: 'music' },
-          ],
-        },
+        { blockType: 'schedule', windowTitle: 'Planning des streams', source: 'auto' },
         { blockType: 'communityGoal', windowTitle: 'Objectif communautaire', label: 'Objectif followers', current: 420, target: 1000, reward: 'Un stream dessin spécial fanarts !' },
         { blockType: 'clips', windowTitle: 'Derniers clips', count: 6 },
         { blockType: 'youtube', windowTitle: 'Dernières vidéos', count: 4 },
@@ -105,6 +96,32 @@ if (!home.layout?.length) {
     },
   })
   log('Page Accueil')
+}
+
+// ---- Planning ---------------------------------------------------------------
+/** Prochaine occurrence (date, à minuit UTC) d'un jour de semaine donné (0 = dimanche … 6 = samedi). */
+function nextWeekday(weekday: number, from = new Date()): string {
+  const todayIdx = from.getDay()
+  let delta = weekday - todayIdx
+  if (delta < 0) delta += 7
+  const d = new Date(from)
+  d.setDate(d.getDate() + delta)
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString()
+}
+
+const schedule = await payload.findGlobal({ slug: 'schedule' })
+if (!schedule.items?.length) {
+  await payload.updateGlobal({
+    slug: 'schedule',
+    data: {
+      items: [
+        { date: nextWeekday(2), time: '20h30', title: 'Soirée dessin chill', kind: 'art' },
+        { date: nextWeekday(4), time: '20h30', title: 'Jeu indé découverte', kind: 'game' },
+        { date: nextWeekday(6), time: '15h00', title: 'Musique & papotage', kind: 'music' },
+      ],
+    },
+  })
+  log('Planning')
 }
 
 const bio = await payload.findGlobal({ slug: 'biography-page' })

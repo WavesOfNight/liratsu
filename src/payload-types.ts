@@ -141,6 +141,7 @@ export interface Config {
     'home-page': HomePage;
     'biography-page': BiographyPage;
     'links-page': LinksPage;
+    schedule: Schedule;
     'shop-settings': ShopSetting;
     'easter-eggs': EasterEgg;
     'game-settings': GameSetting;
@@ -154,6 +155,7 @@ export interface Config {
     'home-page': HomePageSelect<false> | HomePageSelect<true>;
     'biography-page': BiographyPageSelect<false> | BiographyPageSelect<true>;
     'links-page': LinksPageSelect<false> | LinksPageSelect<true>;
+    schedule: ScheduleSelect<false> | ScheduleSelect<true>;
     'shop-settings': ShopSettingsSelect<false> | ShopSettingsSelect<true>;
     'easter-eggs': EasterEggsSelect<false> | EasterEggsSelect<true>;
     'game-settings': GameSettingsSelect<false> | GameSettingsSelect<true>;
@@ -1809,21 +1811,10 @@ export interface HomePage {
              * Texte de la barre de titre façon fenêtre aero (optionnel).
              */
             windowTitle?: string | null;
+            /**
+             * Le contenu du planning se gère dans Réglages > Planning (dates réelles) — ce bloc choisit juste où l’afficher sur la page.
+             */
             source?: ('auto' | 'manual') | null;
-            manual?:
-              | {
-                  day: 'Lundi' | 'Mardi' | 'Mercredi' | 'Jeudi' | 'Vendredi' | 'Samedi' | 'Dimanche';
-                  time: string;
-                  title: string;
-                  kind?: ('game' | 'art' | 'music' | 'chat') | null;
-                  /**
-                   * Cherche n’importe quelle catégorie Twitch : un jeu, mais aussi « Just Chatting », « Art », « Music »… Laisse vide pour garder une simple icône.
-                   */
-                  game?: string | null;
-                  boxArtUrl?: string | null;
-                  id?: string | null;
-                }[]
-              | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'schedule';
@@ -2088,6 +2079,34 @@ export interface LinksPage {
     description?: string | null;
     image?: (number | null) | Media;
   };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Les prochains streams, avec une vraie date (pas juste un jour de la semaine). Un créneau retiré de cette liste une fois sa date passée part automatiquement dans « Anciens plannings ».
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "schedule".
+ */
+export interface Schedule {
+  id: number;
+  /**
+   * Trié automatiquement par date (le plus proche en premier) sur le site.
+   */
+  items?:
+    | {
+        date: string;
+        time: string;
+        kind?: ('game' | 'art' | 'music' | 'chat') | null;
+        title: string;
+        /**
+         * Cherche n’importe quelle catégorie Twitch : un jeu, mais aussi « Just Chatting », « Art », « Music »… Laisse vide pour garder une simple icône.
+         */
+        game?: string | null;
+        boxArtUrl?: string | null;
+        id?: string | null;
+      }[]
+    | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2536,17 +2555,6 @@ export interface HomePageSelect<T extends boolean = true> {
           | {
               windowTitle?: T;
               source?: T;
-              manual?:
-                | T
-                | {
-                    day?: T;
-                    time?: T;
-                    title?: T;
-                    kind?: T;
-                    game?: T;
-                    boxArtUrl?: T;
-                    id?: T;
-                  };
               id?: T;
               blockName?: T;
             };
@@ -2752,6 +2760,26 @@ export interface LinksPageSelect<T extends boolean = true> {
         title?: T;
         description?: T;
         image?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "schedule_select".
+ */
+export interface ScheduleSelect<T extends boolean = true> {
+  items?:
+    | T
+    | {
+        date?: T;
+        time?: T;
+        kind?: T;
+        title?: T;
+        game?: T;
+        boxArtUrl?: T;
+        id?: T;
       };
   updatedAt?: T;
   createdAt?: T;

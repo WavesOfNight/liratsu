@@ -18,6 +18,7 @@ export const GamePicker: TextFieldClientComponent = ({ field, path }) => {
   const description = typeof field.admin?.description === 'string' ? field.admin.description : undefined
   const [open, setOpen] = useState(false)
   const [results, setResults] = useState<Result[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const boxArtPath = path.replace(/\.game$/, '.boxArtUrl')
@@ -28,6 +29,7 @@ export const GamePicker: TextFieldClientComponent = ({ field, path }) => {
     if (timer.current) clearTimeout(timer.current)
     if (q.trim().length < 2) {
       setResults([])
+      setError(null)
       return
     }
     timer.current = setTimeout(async () => {
@@ -35,8 +37,12 @@ export const GamePicker: TextFieldClientComponent = ({ field, path }) => {
       const r = await fetch(`/api/site/admin/games/search?q=${encodeURIComponent(q)}`, { credentials: 'include' }).catch(() => null)
       setLoading(false)
       if (r?.ok) {
-        setResults(await r.json())
+        const data = (await r.json()) as { results: Result[]; error?: string }
+        setResults(data.results)
+        setError(data.error ?? null)
         setOpen(true)
+      } else {
+        setError('Impossible de contacter le serveur.')
       }
     }, 350)
   }
@@ -64,6 +70,12 @@ export const GamePicker: TextFieldClientComponent = ({ field, path }) => {
       />
       {description && <FieldDescription path={path} description={description} />}
       {loading && <span style={{ position: 'absolute', right: 8, top: 34, fontSize: 12, opacity: 0.7 }}>…</span>}
+      {open && error && (
+        <p style={{ color: 'var(--theme-error-500, #d9534f)', fontSize: 13, marginTop: 4 }}>⚠️ {error}</p>
+      )}
+      {open && !error && results.length === 0 && !loading && value && value.trim().length >= 2 && (
+        <p style={{ opacity: 0.7, fontSize: 13, marginTop: 4 }}>Aucun résultat sur Twitch pour « {value} ».</p>
+      )}
       {open && results.length > 0 && (
         <ul
           style={{
