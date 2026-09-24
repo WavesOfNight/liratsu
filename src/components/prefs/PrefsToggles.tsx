@@ -4,6 +4,7 @@ import React from 'react'
 import { usePrefs } from './PrefsProvider'
 import { playSound } from './sounds'
 import styles from './PrefsToggles.module.css'
+import { BubblesOffIcon, BubblesOnIcon, MoonIcon, SoundOffIcon, SoundOnIcon, SunIcon } from './ToggleIcons'
 
 export function PrefsToggles() {
   const { theme, motion, sound, setPref, soundsAvailable, systemReducedMotion } = usePrefs()
@@ -17,7 +18,7 @@ export function PrefsToggles() {
         onClick={() => setPref('theme', nextTheme)}
         title={theme === 'dark' ? 'Passer au ciel (mode clair)' : 'Passer à l’aquarium de nuit (mode sombre)'}
       >
-        <span aria-hidden="true">{theme === 'dark' ? '🌙' : '☀️'}</span>
+        {theme === 'dark' ? <MoonIcon /> : <SunIcon />}
         <span className="sr-only">Mode sombre</span>
       </button>
       <button
@@ -27,7 +28,7 @@ export function PrefsToggles() {
         onClick={() => setPref('motion', !motion)}
         title={motion ? 'Couper les animations' : systemReducedMotion ? 'Réactiver les animations (ton système préfère les réduire)' : 'Activer les animations'}
       >
-        <span aria-hidden="true">{motion ? '🫧' : '⏸️'}</span>
+        {motion ? <BubblesOnIcon /> : <BubblesOffIcon />}
         <span className="sr-only">Animations</span>
       </button>
       {soundsAvailable && (
@@ -41,7 +42,7 @@ export function PrefsToggles() {
           }}
           title={sound ? 'Couper les sons' : 'Activer les petits sons rétro'}
         >
-          <span aria-hidden="true">{sound ? '🔊' : '🔇'}</span>
+          {sound ? <SoundOnIcon /> : <SoundOffIcon />}
           <span className="sr-only">Sons</span>
         </button>
       )}

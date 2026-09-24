@@ -99,7 +99,7 @@ export function BackgroundAquarium({ bubbles = true, fish = true }: { bubbles?: 
     const spawnBubble = (initial = false): Bubble => ({
       x: Math.random() * w,
       y: initial ? Math.random() * h : h + 20,
-      r: 3 + Math.random() * 12,
+      r: 4 + Math.random() * 20,
       vy: 10 + Math.random() * 22,
       wobble: 6 + Math.random() * 14,
       phase: Math.random() * 6,
