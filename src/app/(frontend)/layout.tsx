@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { headers } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import React from 'react'
 import '@/styles/aero.css'
 import { BackgroundAquarium } from '@/components/BackgroundAquarium'
@@ -10,6 +10,7 @@ import { DEFAULT_EGGS, EggsProvider, type EggFlags } from '@/components/eggs/Egg
 import { Footer } from '@/components/layout/Footer'
 import { Header, type NavItem } from '@/components/layout/Header'
 import { PrefsProvider } from '@/components/prefs/PrefsProvider'
+import { MEMBER_COOKIE, readMemberId } from '@/lib/community'
 import { themeInitScript, type ThemeMode } from '@/lib/themeScript'
 import type { SocialName } from '@/components/SocialIcon'
 import { SECTION_KEYS } from '@/globals/SiteSettings'
@@ -50,8 +51,13 @@ export const viewport: Viewport = {
 const safeHex = (v: string | null | undefined, fallback: string) => (v && /^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback)
 
 export default async function FrontendLayout({ children }: { children: React.ReactNode }) {
-  const { site, theme, eggs, integrations } = await getSiteData()
+  const { site, theme, eggs, integrations, payload } = await getSiteData()
   const nonce = (await headers()).get('x-nonce') ?? undefined
+
+  const jar = await cookies()
+  const memberCookie = jar.get(MEMBER_COOKIE)
+  const memberId = integrations.twitch.oauthEnabled ? readMemberId(memberCookie ? `${MEMBER_COOKIE}=${memberCookie.value}` : null) : null
+  const member = memberId ? await payload.findByID({ collection: 'members', id: memberId, depth: 0 }).catch(() => null) : null
 
   const p = theme.palette ?? {}
   const vars = (Object.keys(DEFAULT_PALETTE) as (keyof typeof DEFAULT_PALETTE)[])
@@ -88,7 +94,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
                 </div>
               )}
               <BackgroundAquarium bubbles={theme.effects?.bubbles !== false} fish={theme.effects?.fish !== false} />
-              <Header items={nav} siteName={site.siteName} />
+              <Header items={nav} siteName={site.siteName} member={member ? { displayName: member.displayName, avatarUrl: member.avatarUrl ?? null } : null} />
               <main id="contenu" tabIndex={-1}>
                 {children}
               </main>

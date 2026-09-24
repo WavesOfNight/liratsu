@@ -6,6 +6,7 @@
  */
 import Link from 'next/link'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { COUNTRIES } from '@/lib/countries'
 import { formatEuros } from '@/lib/shop/pricing'
 import { useCart } from './cart'
 import styles from './shop.module.css'
@@ -28,22 +29,6 @@ type SavedAddress = {
   phone?: string | null
 } | null
 export type CheckoutMember = { displayName: string; avatarUrl: string | null; email: string | null; savedAddress: SavedAddress } | null
-
-const COUNTRIES: [string, string][] = [
-  ['FR', 'France'],
-  ['BE', 'Belgique'],
-  ['CH', 'Suisse'],
-  ['LU', 'Luxembourg'],
-  ['MC', 'Monaco'],
-  ['DE', 'Allemagne'],
-  ['ES', 'Espagne'],
-  ['IT', 'Italie'],
-  ['NL', 'Pays-Bas'],
-  ['PT', 'Portugal'],
-  ['GB', 'Royaume-Uni'],
-  ['CA', 'Canada'],
-  ['US', 'États-Unis'],
-]
 
 declare global {
   interface Window {

@@ -8,8 +8,9 @@ import { playSound } from '../prefs/sounds'
 import styles from './Header.module.css'
 
 export type NavItem = { href: string; label: string; soon?: boolean }
+export type HeaderMember = { displayName: string; avatarUrl: string | null } | null
 
-export function Header({ items, siteName }: { items: NavItem[]; siteName: string }) {
+export function Header({ items, siteName, member = null }: { items: NavItem[]; siteName: string; member?: HeaderMember }) {
   const pathname = usePathname()
   // Le menu mobile se referme de lui-même quand la page change.
   const [openOn, setOpenOn] = useState<string | null>(null)
@@ -42,6 +43,16 @@ export function Header({ items, siteName }: { items: NavItem[]; siteName: string
           </ul>
         </nav>
         <div className={styles.prefs}>
+          {member && (
+            <Link href="/communaute/profil" className={styles.profileLink} title={`Mon profil (${member.displayName})`} onClick={() => playSound('click')}>
+              {member.avatarUrl ? (
+                <img src={`/_next/image?url=${encodeURIComponent(member.avatarUrl)}&w=64&q=75`} alt="" width={40} height={40} />
+              ) : (
+                <span aria-hidden="true">👤</span>
+              )}
+              <span className="sr-only">Mon profil</span>
+            </Link>
+          )}
           <PrefsToggles />
         </div>
       </div>

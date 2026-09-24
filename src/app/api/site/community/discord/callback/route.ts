@@ -5,7 +5,7 @@ import { exchangeDiscordLinkCode } from '@/lib/discord'
 import { getPayloadClient } from '@/lib/payload'
 import { readCookie } from '@/lib/twoFactor'
 
-const back = (q: string) => new Response(null, { status: 302, headers: { Location: `/communaute${q}` } })
+const back = (q: string) => new Response(null, { status: 302, headers: { Location: `/communaute/profil${q}` } })
 const clearCookie = 'dcauth=; Path=/api/site/community/discord; Max-Age=0'
 
 /** Retour de la liaison Discord : le state signé porte l'id du membre à relier (voir /link). */

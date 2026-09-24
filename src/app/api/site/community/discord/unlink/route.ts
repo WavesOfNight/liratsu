@@ -15,5 +15,5 @@ export async function POST(req: Request) {
     data: { discordId: null, discordUsername: null, discordAvatarUrl: null },
     overrideAccess: true,
   })
-  return new Response(null, { status: 303, headers: { Location: '/communaute' } })
+  return new Response(null, { status: 303, headers: { Location: '/communaute/profil' } })
 }

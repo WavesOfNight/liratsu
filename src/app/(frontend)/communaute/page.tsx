@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { cookies } from 'next/headers'
 import Image from 'next/image'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import React from 'react'
 import { AeroWindow } from '@/components/AeroWindow'
@@ -25,19 +26,15 @@ const STATUS_MESSAGES: Record<string, { kind: 'ok' | 'error'; text: string }> = 
   'login:erreur': { kind: 'error', text: 'La connexion Twitch a échoué, réessaie.' },
   'login:refuse': { kind: 'error', text: 'Ce compte est banni de l’Espace communauté.' },
   'login:annule': { kind: 'error', text: 'Connexion annulée.' },
-  'discord:ok': { kind: 'ok', text: 'Compte Discord lié ✦' },
-  'discord:erreur': { kind: 'error', text: 'La liaison du compte Discord a échoué, réessaie.' },
-  'discord:deja-lie': { kind: 'error', text: 'Ce compte Discord est déjà lié à un autre membre.' },
-  'discord:annule': { kind: 'error', text: 'Liaison Discord annulée.' },
 }
 
-export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ login?: string; discord?: string }> }) {
+export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ login?: string }> }) {
   const section = await getSection('community')
   if (section.status === 'off') notFound()
   if (section.status === 'soon') return <ComingSoon title="Espace communauté" section="community" text={section.teaserText} notifyForm={section.notifyForm} />
 
-  const { login, discord: discordStatus } = await searchParams
-  const banner = login ? STATUS_MESSAGES[`login:${login}`] : discordStatus ? STATUS_MESSAGES[`discord:${discordStatus}`] : null
+  const { login } = await searchParams
+  const banner = login ? STATUS_MESSAGES[`login:${login}`] : null
 
   const { payload, integrations } = await getSiteData()
   const jar = await cookies()
@@ -79,22 +76,9 @@ export default async function CommunityPage({ searchParams }: { searchParams: Pr
               <span>
                 Connecté·e en tant que <strong>{member.displayName}</strong>
               </span>
-              {integrations.discord.clientId &&
-                (member.discordUsername ? (
-                  <>
-                    <span className="muted">
-                      Discord : <strong>{member.discordUsername}</strong>
-                    </span>
-                    <form action="/api/site/community/discord/unlink" method="post">
-                      <button className="candy-btn candy-btn--ghost candy-btn--small">Délier</button>
-                    </form>
-                  </>
-                ) : (
-                  // eslint-disable-next-line @next/next/no-html-link-for-pages -- route API (redirection OAuth), pas une page
-                  <a className="candy-btn candy-btn--ghost candy-btn--small" href="/api/site/community/discord/link">
-                    Lier mon compte Discord
-                  </a>
-                ))}
+              <Link href="/communaute/profil" className="candy-btn candy-btn--ghost candy-btn--small">
+                ⚙️ Mon profil
+              </Link>
               <form action="/api/site/auth/twitch/logout" method="post">
                 <button className="candy-btn candy-btn--ghost candy-btn--small">Se déconnecter</button>
               </form>
