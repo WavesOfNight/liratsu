@@ -7,7 +7,7 @@ import sharp from 'sharp'
 import { getIntegrations } from './settings'
 import { boxArtHiRes } from './twitch'
 
-export type ScheduleItemForDiscord = { day: string; time: string; title: string; icon: string; boxArtUrl?: string | null; cancelled?: boolean }
+export type ScheduleItemForDiscord = { date: string; day: string; time: string; title: string; icon: string; boxArtUrl?: string | null; cancelled?: boolean }
 
 // Rendu en haute résolution (les jaquettes sont maintenant récupérées en 564×752, voir
 // searchGameBoxArt) : une image nette même agrandie ou vue sur un écran haute densité.
@@ -73,12 +73,24 @@ function starPath(cx: number, cy: number, r: number): string {
   return `M ${pts.map((p) => p.join(',')).join(' L ')} Z`
 }
 
+/** Date courte pour le titre de la fenêtre, ex. « 24/09/26 ». */
+function formatShortDate(dateIso: string): string {
+  return new Date(dateIso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'Europe/Paris' })
+}
+
 /** Rend l'image PNG du planning : une fenêtre « Aero » (même look que le site), avec les cartes des streams. */
 export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Promise<Buffer> {
   const list = items.slice(0, 8)
   const cols = Math.min(COLS_MAX, Math.max(1, list.length))
   const rows = Math.ceil(list.length / cols) || 1
   const barH = 64
+  const dates = list.map((i) => i.date).filter(Boolean).sort()
+  const windowTitle =
+    dates.length === 0
+      ? 'Planning de la semaine'
+      : dates[0] === dates[dates.length - 1]
+        ? `Planning du ${formatShortDate(dates[0])}`
+        : `Planning de la semaine du ${formatShortDate(dates[0])} au ${formatShortDate(dates[dates.length - 1])}`
   const margin = 24
   const winPad = PAD
   const W = margin * 2 + winPad * 2 + cols * TILE + (cols - 1) * GAP
@@ -171,7 +183,7 @@ export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Prom
       <rect x="${winX}" y="${winY}" width="${winW}" height="${H - margin * 2}" rx="18" fill="#ffffff"/>
       <path d="M ${winX} ${winY + 18} a 18 18 0 0 1 18 -18 h ${winW - 36} a 18 18 0 0 1 18 18 v ${barH - 18} h -${winW} Z" fill="url(#titlebar)"/>
       <path d="${starPath(winX + 32, winY + barH / 2, 14)}" fill="#ffd35c" stroke="#ffffff" stroke-width="2"/>
-      <text x="${winX + 58}" y="${winY + barH / 2 + 8}" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#0f2a5c">Planning de la semaine</text>
+      <text x="${winX + 58}" y="${winY + barH / 2 + 7}" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f2a5c">${escXml(windowTitle)}</text>
       ${ctrlBtn(minX, 'min')}
       ${ctrlBtn(maxX, 'max')}
       ${ctrlBtn(closeX, 'close')}

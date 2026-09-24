@@ -60,6 +60,7 @@ export function formatScheduleDate(dateIso: string): string {
 
 export function toDiscordItems(items: ScheduleItem[]): ScheduleItemForDiscord[] {
   return sortedByDate(items).map((i) => ({
+    date: i.date,
     day: formatScheduleDate(i.date),
     time: i.time,
     title: displayTitle(i),
