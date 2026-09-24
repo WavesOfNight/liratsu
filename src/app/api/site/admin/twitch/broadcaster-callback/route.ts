@@ -1,4 +1,4 @@
-import { requireStaff } from '@/lib/api'
+import { guard } from '@/lib/api'
 import { unpackSigned } from '@/lib/community'
 import { safeEqual } from '@/lib/crypto'
 import { exchangeBroadcasterOAuthCode } from '@/lib/twitch'
@@ -6,10 +6,16 @@ import { readCookie } from '@/lib/twoFactor'
 
 const back = (q: string) => new Response(null, { status: 302, headers: { Location: `/admin/globals/integrations${q}` } })
 
-/** Retour de l'autorisation du compte Twitch de Liratsu : sauvegarde le jeton, revient dans l'admin. */
+/**
+ * Retour de l'autorisation du compte Twitch de Liratsu : sauvegarde le jeton, revient dans l'admin.
+ * Pas de requireStaff ici (contrairement à /broadcaster-auth) : Twitch amène le navigateur ici par
+ * une redirection cross-site, et le cookie de session admin n'y revient pas forcément selon le
+ * navigateur — la protection vient du state signé (btauth), qui ne peut avoir été obtenu que par
+ * un admin déjà authentifié sur /broadcaster-auth (même schéma que la connexion viewer ci-contre).
+ */
 export async function GET(req: Request) {
-  const auth = await requireStaff(req, 'admin')
-  if (auth instanceof Response) return auth
+  const blocked = guard(req, 'twitch-broadcaster-cb', 10, 10 * 60_000)
+  if (blocked) return blocked
   const url = new URL(req.url)
   const state = url.searchParams.get('state') ?? ''
   const expected = unpackSigned(readCookie(req.headers.get('cookie'), 'btauth'))
