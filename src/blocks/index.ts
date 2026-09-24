@@ -111,9 +111,27 @@ export const CommunityGoalBlock: Block = {
     windowTitle,
     { name: 'label', label: 'Objectif', type: 'text', required: true, defaultValue: 'Objectif subs' },
     {
+      name: 'source',
+      label: 'Valeur actuelle',
+      type: 'select',
+      defaultValue: 'manual',
+      admin: { description: 'Le compteur Twitch demande d’avoir connecté le compte de Liratsu une fois (Réglages > Clés API & services > Twitch).' },
+      options: [
+        { label: 'Saisie manuelle', value: 'manual' },
+        { label: 'Followers Twitch (auto)', value: 'twitch-followers' },
+        { label: 'Abonné·e·s Twitch (auto)', value: 'twitch-subs' },
+      ],
+    },
+    {
       type: 'row',
       fields: [
-        { name: 'current', label: 'Valeur actuelle', type: 'number', required: true, defaultValue: 0 },
+        {
+          name: 'current',
+          label: 'Valeur actuelle (si saisie manuelle)',
+          type: 'number',
+          defaultValue: 0,
+          admin: { condition: (_, siblingData) => (siblingData?.source ?? 'manual') === 'manual' },
+        },
         { name: 'target', label: 'Objectif', type: 'number', required: true, defaultValue: 100 },
       ],
     },

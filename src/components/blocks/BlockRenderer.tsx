@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 import type { BiographyPage, HomePage, Media, SiteSetting } from '@/payload-types'
-import { getClips, getLiveStatus, getSchedule } from '@/lib/twitch'
+import { getClips, getFollowerCount, getLiveStatus, getSchedule, getSubscriberCount } from '@/lib/twitch'
 import { getLatestVideos } from '@/lib/youtube'
 import { absoluteUrl, mediaUrl } from '@/lib/site'
 import { displayTitle, formatScheduleDate, getUpcomingScheduleItems } from '@/lib/schedule'
@@ -179,13 +179,22 @@ async function renderBlock(block: Block, site: SiteSetting, isFirst: boolean): P
       )
     }
     case 'communityGoal': {
-      const pct = Math.max(0, Math.min(100, block.target ? (block.current / block.target) * 100 : 0))
+      const source = block.source ?? 'manual'
+      let current = block.current ?? 0
+      if (source === 'twitch-followers') {
+        const n = await getFollowerCount().catch(() => null)
+        if (n !== null) current = n
+      } else if (source === 'twitch-subs') {
+        const n = await getSubscriberCount().catch(() => null)
+        if (n !== null) current = n
+      }
+      const pct = Math.max(0, Math.min(100, block.target ? (current / block.target) * 100 : 0))
       return (
         <AeroWindow title={block.windowTitle || 'Objectif communautaire'} icon="heart">
           <div className={styles.goalHead}>
             <span>{block.label}</span>
             <span className={styles.goalValue}>
-              {block.current.toLocaleString('fr-FR')} / {block.target.toLocaleString('fr-FR')}
+              {current.toLocaleString('fr-FR')} / {block.target.toLocaleString('fr-FR')}
             </span>
           </div>
           <div
@@ -194,7 +203,7 @@ async function renderBlock(block: Block, site: SiteSetting, isFirst: boolean): P
             role="progressbar"
             aria-valuemin={0}
             aria-valuemax={block.target}
-            aria-valuenow={block.current}
+            aria-valuenow={current}
             aria-label={block.label}
           >
             <div className="pixel-bar__track">

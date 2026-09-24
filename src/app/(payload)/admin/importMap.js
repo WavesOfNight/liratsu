@@ -29,6 +29,7 @@ import { FindVodButton as FindVodButton_fda49817b090bcbc555c7f2ed06b9de2 } from 
 import { ColorField as ColorField_2d3b6dcbebce75fc2ef5ac094f4218f0 } from '@/components/admin/ColorField'
 import { SendScheduleToDiscord as SendScheduleToDiscord_0d62be781bd9599e771dc1160570607f } from '@/components/admin/SendScheduleToDiscord'
 import { GamePicker as GamePicker_2e9aa32c25a8aaeb529b39c5c417cac9 } from '@/components/admin/GamePicker'
+import { ConnectTwitchBroadcaster as ConnectTwitchBroadcaster_151020bc11d0eed5f7e1a4b84f693548 } from '@/components/admin/ConnectTwitchBroadcaster'
 import { AdminIcon as AdminIcon_b80a86fce1072afc84cd6a430a965697 } from '@/components/admin/AdminLogo'
 import { AdminLogo as AdminLogo_b80a86fce1072afc84cd6a430a965697 } from '@/components/admin/AdminLogo'
 import { Dashboard as Dashboard_0e7b23c75ea046975e1784ba01f82886 } from '@/components/admin/Dashboard'
@@ -70,6 +71,7 @@ export const importMap = {
   "@/components/admin/ColorField#ColorField": ColorField_2d3b6dcbebce75fc2ef5ac094f4218f0,
   "@/components/admin/SendScheduleToDiscord#SendScheduleToDiscord": SendScheduleToDiscord_0d62be781bd9599e771dc1160570607f,
   "@/components/admin/GamePicker#GamePicker": GamePicker_2e9aa32c25a8aaeb529b39c5c417cac9,
+  "@/components/admin/ConnectTwitchBroadcaster#ConnectTwitchBroadcaster": ConnectTwitchBroadcaster_151020bc11d0eed5f7e1a4b84f693548,
   "@/components/admin/AdminLogo#AdminIcon": AdminIcon_b80a86fce1072afc84cd6a430a965697,
   "@/components/admin/AdminLogo#AdminLogo": AdminLogo_b80a86fce1072afc84cd6a430a965697,
   "@/components/admin/Dashboard#Dashboard": Dashboard_0e7b23c75ea046975e1784ba01f82886,

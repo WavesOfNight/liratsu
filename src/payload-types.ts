@@ -1872,7 +1872,11 @@ export interface HomePage {
              */
             windowTitle?: string | null;
             label: string;
-            current: number;
+            /**
+             * Le compteur Twitch demande d’avoir connecté le compte de Liratsu une fois (Réglages > Clés API & services > Twitch).
+             */
+            source?: ('manual' | 'twitch-followers' | 'twitch-subs') | null;
+            current?: number | null;
             target: number;
             reward?: string | null;
             id?: string | null;
@@ -2025,7 +2029,11 @@ export interface BiographyPage {
              */
             windowTitle?: string | null;
             label: string;
-            current: number;
+            /**
+             * Le compteur Twitch demande d’avoir connecté le compte de Liratsu une fois (Réglages > Clés API & services > Twitch).
+             */
+            source?: ('manual' | 'twitch-followers' | 'twitch-subs') | null;
+            current?: number | null;
             target: number;
             reward?: string | null;
             id?: string | null;
@@ -2327,6 +2335,10 @@ export interface Integration {
      */
     clientSecret?: string | null;
     oauthEnabled?: boolean | null;
+    /**
+     * Ne pas remplir à la main — utiliser le bouton ci-dessous. — Stocké chiffré, jamais affiché en clair. Laisser le masque pour conserver la valeur.
+     */
+    broadcasterRefreshToken?: string | null;
   };
   youtube?: {
     /**
@@ -2605,6 +2617,7 @@ export interface HomePageSelect<T extends boolean = true> {
           | {
               windowTitle?: T;
               label?: T;
+              source?: T;
               current?: T;
               target?: T;
               reward?: T;
@@ -2722,6 +2735,7 @@ export interface BiographyPageSelect<T extends boolean = true> {
           | {
               windowTitle?: T;
               label?: T;
+              source?: T;
               current?: T;
               target?: T;
               reward?: T;
@@ -2957,6 +2971,7 @@ export interface IntegrationsSelect<T extends boolean = true> {
         clientId?: T;
         clientSecret?: T;
         oauthEnabled?: T;
+        broadcasterRefreshToken?: T;
       };
   youtube?:
     | T

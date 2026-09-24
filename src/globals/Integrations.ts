@@ -43,6 +43,16 @@ export const Integrations: GlobalConfig = {
             trimmedText({ name: 'clientId', label: 'Client ID' }),
             encryptedField({ name: 'clientSecret', label: 'Client Secret' }),
             { name: 'oauthEnabled', label: 'Connexion viewers via Twitch (Espace communauté)', type: 'checkbox', defaultValue: false },
+            encryptedField({
+              name: 'broadcasterRefreshToken',
+              label: 'Jeton du compte Liratsu (abonnés/followers)',
+              description: 'Ne pas remplir à la main — utiliser le bouton ci-dessous.',
+            }),
+            {
+              name: 'connectBroadcaster',
+              type: 'ui',
+              admin: { components: { Field: '@/components/admin/ConnectTwitchBroadcaster#ConnectTwitchBroadcaster' } },
+            },
           ],
         },
         {

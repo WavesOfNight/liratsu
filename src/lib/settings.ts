@@ -14,7 +14,7 @@ const TTL = 30_000
 const pick = (...values: (string | null | undefined)[]): string => values.find((v) => typeof v === 'string' && v.trim() !== '')?.trim() ?? ''
 
 export type ResolvedIntegrations = {
-  twitch: { channelLogin: string; clientId: string; clientSecret: string; oauthEnabled: boolean }
+  twitch: { channelLogin: string; clientId: string; clientSecret: string; oauthEnabled: boolean; broadcasterRefreshToken: string }
   youtube: { channelId: string; vodChannelHandle: string }
   stripe: { publishableKey: string; secretKey: string; webhookSecret: string }
   paypal: { clientId: string; clientSecret: string; webhookId: string; apiBase: string }
@@ -53,6 +53,7 @@ export async function getIntegrations(): Promise<ResolvedIntegrations> {
       clientId: pick(s(r.twitch, 'clientId'), env.TWITCH_CLIENT_ID),
       clientSecret: pick(s(r.twitch, 'clientSecret'), env.TWITCH_CLIENT_SECRET),
       oauthEnabled: Boolean(r.twitch?.oauthEnabled),
+      broadcasterRefreshToken: s(r.twitch, 'broadcasterRefreshToken'),
     },
     youtube: {
       channelId: pick(s(r.youtube, 'channelId'), env.YOUTUBE_CHANNEL_ID),

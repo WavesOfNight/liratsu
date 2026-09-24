@@ -2,6 +2,7 @@ import * as migration_20260924_013002_initial from './20260924_013002_initial';
 import * as migration_20260924_023225_add_site_maintenance from './20260924_023225_add_site_maintenance';
 import * as migration_20260924_123500_add_schedule_page from './20260924_123500_add_schedule_page';
 import * as migration_20260924_151400_schedule_title_optional from './20260924_151400_schedule_title_optional';
+import * as migration_20260924_163000_broadcaster_followers from './20260924_163000_broadcaster_followers';
 
 export const migrations = [
   {
@@ -23,5 +24,10 @@ export const migrations = [
     up: migration_20260924_151400_schedule_title_optional.up,
     down: migration_20260924_151400_schedule_title_optional.down,
     name: '20260924_151400_schedule_title_optional'
+  },
+  {
+    up: migration_20260924_163000_broadcaster_followers.up,
+    down: migration_20260924_163000_broadcaster_followers.down,
+    name: '20260924_163000_broadcaster_followers'
   },
 ];

@@ -1,9 +1,12 @@
 /**
  * Intégration Twitch Helix : statut live, planning, clips (cache serveur 60 s),
- * et OAuth pour la connexion optionnelle des viewers à l'Espace communauté.
+ * OAuth pour la connexion optionnelle des viewers à l'Espace communauté, et OAuth pour le
+ * compte de la diffuseuse (nombre d'abonnés/followers — ces totaux exigent un jeton du
+ * compte, l'API Client ID/Secret seul ne suffit plus depuis que Twitch a fermé ces endpoints).
  */
 import { cached } from './cache'
-import { getIntegrations } from './settings'
+import { getIntegrations, invalidateSettingsCache } from './settings'
+import { getPayloadClient } from './payload'
 
 const HELIX = 'https://api.twitch.tv/helix'
 
@@ -182,4 +185,90 @@ export async function exchangeOAuthCode(code: string, redirectUri: string): Prom
   // Le jeton utilisateur n'est pas conservé : on n'en a besoin que pour identifier le compte.
   await fetch('https://id.twitch.tv/oauth2/revoke', { method: 'POST', body: new URLSearchParams({ client_id: twitch.clientId, token: access_token }) }).catch(() => {})
   return user ? { id: user.id, login: user.login, displayName: user.display_name, avatar: user.profile_image_url } : null
+}
+
+/**
+ * OAuth du compte de la diffuseuse (Liratsu elle-même) : donne accès aux totaux
+ * d'abonnés/followers pour l'objectif communautaire. Portée volontairement large
+ * (les deux scopes) pour ne demander l'autorisation qu'une seule fois, quel que soit
+ * le compteur choisi ensuite dans le bloc.
+ */
+const BROADCASTER_SCOPES = 'moderator:read:followers channel:read:subscriptions'
+
+export async function getBroadcasterOAuthUrl(redirectUri: string, state: string): Promise<string | null> {
+  const { twitch } = await getIntegrations()
+  if (!twitch.clientId) return null
+  const p = new URLSearchParams({ client_id: twitch.clientId, redirect_uri: redirectUri, response_type: 'code', scope: BROADCASTER_SCOPES, state })
+  return `https://id.twitch.tv/oauth2/authorize?${p}`
+}
+
+async function saveBroadcasterRefreshToken(token: string): Promise<void> {
+  const payload = await getPayloadClient()
+  await payload.updateGlobal({ slug: 'integrations', data: { twitch: { broadcasterRefreshToken: token } }, overrideAccess: true })
+  invalidateSettingsCache()
+}
+
+/** Échange le code contre un jeton et sauvegarde le refresh token (chiffré). */
+export async function exchangeBroadcasterOAuthCode(code: string, redirectUri: string): Promise<boolean> {
+  const { twitch } = await getIntegrations()
+  const r = await fetch('https://id.twitch.tv/oauth2/token', {
+    method: 'POST',
+    body: new URLSearchParams({ client_id: twitch.clientId, client_secret: twitch.clientSecret, code, grant_type: 'authorization_code', redirect_uri: redirectUri }),
+  })
+  if (!r.ok) return false
+  const { refresh_token } = (await r.json()) as { access_token: string; refresh_token?: string }
+  if (!refresh_token) return false
+  await saveBroadcasterRefreshToken(refresh_token)
+  return true
+}
+
+/**
+ * Jeton d'accès pour les endpoints qui exigent le compte de la diffuseuse. Twitch fait
+ * tourner (change) le refresh token à chaque utilisation : on sauvegarde systématiquement
+ * le nouveau, sinon le suivant échouerait.
+ */
+async function getBroadcasterAccessToken(): Promise<string | null> {
+  const { twitch } = await getIntegrations()
+  if (!twitch.clientId || !twitch.clientSecret || !twitch.broadcasterRefreshToken) return null
+  return cached('twitch:broadcaster-token', 50 * 60 * 1000, async () => {
+    const r = await fetch('https://id.twitch.tv/oauth2/token', {
+      method: 'POST',
+      body: new URLSearchParams({ client_id: twitch.clientId, client_secret: twitch.clientSecret, grant_type: 'refresh_token', refresh_token: twitch.broadcasterRefreshToken }),
+    })
+    if (!r.ok) throw new Error(`Twitch broadcaster refresh: ${r.status}`)
+    const data = (await r.json()) as { access_token: string; refresh_token: string }
+    await saveBroadcasterRefreshToken(data.refresh_token)
+    return data.access_token
+  })
+}
+
+async function broadcasterHelix<T>(path: string): Promise<T | null> {
+  const { twitch } = await getIntegrations()
+  const token = await getBroadcasterAccessToken().catch(() => null)
+  if (!token || !twitch.clientId) return null
+  const r = await fetch(`${HELIX}${path}`, { headers: { 'Client-Id': twitch.clientId, Authorization: `Bearer ${token}` } })
+  if (!r.ok) return null
+  return (await r.json()) as T
+}
+
+/** Nombre total de followers — nécessite le compte de la diffuseuse connecté (voir ci-dessus). */
+export async function getFollowerCount(): Promise<number | null> {
+  const { twitch } = await getIntegrations()
+  return cached('twitch:follower-count', 5 * 60_000, async () => {
+    const id = await broadcasterId(twitch.channelLogin)
+    if (!id) return null
+    const d = await broadcasterHelix<{ total: number }>(`/channels/followers?broadcaster_id=${id}&first=1`)
+    return d?.total ?? null
+  })
+}
+
+/** Nombre total d'abonné·e·s payant·e·s — nécessite le compte de la diffuseuse connecté. */
+export async function getSubscriberCount(): Promise<number | null> {
+  const { twitch } = await getIntegrations()
+  return cached('twitch:subscriber-count', 5 * 60_000, async () => {
+    const id = await broadcasterId(twitch.channelLogin)
+    if (!id) return null
+    const d = await broadcasterHelix<{ total: number }>(`/subscriptions?broadcaster_id=${id}&first=1`)
+    return d?.total ?? null
+  })
 }
