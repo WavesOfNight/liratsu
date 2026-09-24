@@ -1,16 +1,16 @@
 import type { GlobalAfterChangeHook, GlobalConfig } from 'payload'
 import { anyone, isEditor } from '@/access/roles'
 import { revalidateAll } from '@/hooks/revalidate'
-import { sendScheduleToDiscord } from '@/lib/discord'
-import { extractScheduleItems, scheduleChanged, toDiscordItems } from '@/lib/schedule'
+import { extractScheduleItems, scheduleChanged } from '@/lib/schedule'
 import { getIntegrations } from '@/lib/settings'
 import { findVodForDate } from '@/lib/youtube'
 
 /**
  * À chaque enregistrement : archive les créneaux passés qui ont disparu de la liste (avec
- * tentative de retrouver la VOD automatiquement) et envoie le planning sur Discord si le
- * contenu a changé. N'importe quelle erreur ici est journalisée mais ne doit jamais empêcher
- * l'enregistrement.
+ * tentative de retrouver la VOD automatiquement). L'envoi sur Discord n'est PAS automatique
+ * (pour ne pas spammer le salon à chaque petit ajustement) : c'est le bouton « Envoyer sur
+ * Discord » ci-dessous qui déclenche l'envoi, volontairement. N'importe quelle erreur ici est
+ * journalisée mais ne doit jamais empêcher l'enregistrement.
  */
 const onScheduleChange: GlobalAfterChangeHook = async ({ doc, previousDoc, req }) => {
   try {
@@ -38,9 +38,6 @@ const onScheduleChange: GlobalAfterChangeHook = async ({ doc, previousDoc, req }
         if (found) await req.payload.update({ collection: 'schedule-archive', id: archived.id, data: { vodUrl: found.url, vodTitle: found.title, vodFound: true }, overrideAccess: true })
       }
     }
-
-    const discordItems = toDiscordItems(nextItems)
-    if (discordItems.length) await sendScheduleToDiscord(discordItems)
   } catch (err) {
     req.payload.logger.error({ err }, 'onScheduleChange')
   }
