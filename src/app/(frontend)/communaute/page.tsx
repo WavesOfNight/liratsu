@@ -122,7 +122,7 @@ export default async function CommunityPage() {
           </AeroWindow>
 
           <AeroWindow title="Code surprise" icon="star" id="codes">
-            <p style={{ marginTop: 0 }}>Un code donné en live, trouvé dans un easter egg ou gagné dans The Saac ? Entre-le ici pour débloquer une surprise !</p>
+            <p style={{ marginTop: 0 }}>Un code donné en live, trouvé dans un easter egg ou gagné dans The Ratsu ? Entre-le ici pour débloquer une surprise !</p>
             <RedeemForm />
           </AeroWindow>
         </div>

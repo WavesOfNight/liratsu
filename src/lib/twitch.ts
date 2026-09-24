@@ -72,7 +72,7 @@ export async function getLiveStatus(): Promise<LiveStatus> {
   })
 }
 
-export type ScheduleItem = { start: string; title: string; category?: string; canceled?: boolean }
+export type ScheduleItem = { start: string; title: string; category?: string; boxArtUrl?: string; canceled?: boolean }
 
 export async function getSchedule(): Promise<ScheduleItem[] | null> {
   const { twitch } = await getIntegrations()
@@ -85,7 +85,34 @@ export async function getSchedule(): Promise<ScheduleItem[] | null> {
     )
     const segs = d?.data?.segments
     if (!segs?.length) return null
-    return segs.map((s) => ({ start: s.start_time, title: s.title, category: s.category?.name, canceled: Boolean(s.canceled_until) }))
+    // Une seule recherche de jaquette par catégorie distincte (mise en cache 6 h).
+    const categories = [...new Set(segs.map((s) => s.category?.name).filter((c): c is string => Boolean(c)))]
+    const boxArt = new Map<string, string>()
+    await Promise.all(
+      categories.map(async (cat) => {
+        const [hit] = await searchGameBoxArt(cat).catch(() => [])
+        if (hit) boxArt.set(cat, hit.boxArtUrl)
+      }),
+    )
+    return segs.map((s) => ({ start: s.start_time, title: s.title, category: s.category?.name, boxArtUrl: s.category?.name ? boxArt.get(s.category.name) : undefined, canceled: Boolean(s.canceled_until) }))
+  })
+}
+
+export type GameResult = { id: string; name: string; boxArtUrl: string }
+
+/**
+ * Recherche un jeu par nom (nom officiel + jaquette officielle) via l'API Twitch — les
+ * mêmes identifiants (Client ID/Secret) que le reste de l'intégration Twitch, aucune clé
+ * supplémentaire à saisir. Utilisé pour illustrer joliment le planning des streams.
+ */
+export async function searchGameBoxArt(query: string): Promise<GameResult[]> {
+  const q = query.trim()
+  if (q.length < 2) return []
+  const { twitch } = await getIntegrations()
+  if (!twitch.clientId || !twitch.clientSecret) return []
+  return cached(`twitch:game-search:${q.toLowerCase()}`, 6 * 3600_000, async () => {
+    const d = await helix<{ data: { id: string; name: string; box_art_url: string }[] }>(`/search/categories?query=${encodeURIComponent(q)}&first=8`)
+    return (d?.data ?? []).map((g) => ({ id: g.id, name: g.name, boxArtUrl: g.box_art_url.replace('{width}', '188').replace('{height}', '250') }))
   })
 }
 

@@ -23,12 +23,11 @@ export function PrefsToggles() {
       <button
         type="button"
         className={styles.toggle}
-        aria-pressed={motion && !systemReducedMotion}
-        disabled={systemReducedMotion}
+        aria-pressed={motion}
         onClick={() => setPref('motion', !motion)}
-        title={systemReducedMotion ? 'Animations réduites par ton système' : motion ? 'Couper les animations' : 'Activer les animations'}
+        title={motion ? 'Couper les animations' : systemReducedMotion ? 'Réactiver les animations (ton système préfère les réduire)' : 'Activer les animations'}
       >
-        <span aria-hidden="true">{motion && !systemReducedMotion ? '🫧' : '⏸️'}</span>
+        <span aria-hidden="true">{motion ? '🫧' : '⏸️'}</span>
         <span className="sr-only">Animations</span>
       </button>
       {soundsAvailable && (

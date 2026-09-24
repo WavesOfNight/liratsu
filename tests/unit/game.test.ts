@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { generateFloor } from '@/game/saac/dungeon'
-import { createRng, dailySeed } from '@/game/saac/rng'
-import { cleanNickname, validateScore } from '@/game/saac/validate'
+import { generateFloor } from '@/game/ratsu/dungeon'
+import { createRng, dailySeed } from '@/game/ratsu/rng'
+import { cleanNickname, validateScore } from '@/game/ratsu/validate'
 
 const rules = { maxFloors: 5, maxScorePerSecond: 60 }
 

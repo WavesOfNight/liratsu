@@ -44,11 +44,15 @@ export const SECTION_PATHS: Record<SectionKey, string> = {
   links: '/liens',
 }
 
-export function mediaUrl(m: number | Media | null | undefined, size?: 'thumb' | 'card' | 'wide'): string | null {
+type UploadDoc = { url?: string | null; sizes?: Record<string, { url?: string | null } | null | undefined> }
+
+/** Accepte un document de n'importe quelle collection upload (media, game-assets…). */
+export function mediaUrl(m: number | Media | UploadDoc | null | undefined, size?: string): string | null {
   if (!m || typeof m !== 'object') return null
-  const url = (size && m.sizes?.[size]?.url) || m.url
+  const doc = m as UploadDoc
+  const url = (size && doc.sizes?.[size]?.url) || doc.url
   // Payload renvoie des URL absolues (serverURL) : on les rend relatives pour next/image.
-  return url ? url.replace(/^https?:\/\/[^/]+(?=\/api\/media\/)/, '') : null
+  return url ? url.replace(/^https?:\/\/[^/]+(?=\/api\/[\w-]+\/file\/)/, '') : null
 }
 
 export function absoluteUrl(site: SiteSetting, path = '/'): string {

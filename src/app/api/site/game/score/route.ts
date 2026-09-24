@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { cleanNickname, validateScore } from '@/game/saac/validate'
+import { cleanNickname, validateScore } from '@/game/ratsu/validate'
 import { error, guard, json, readJson } from '@/lib/api'
 import { getPayloadClient } from '@/lib/payload'
 
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
   if (!body.ok) return body.res
   const d = body.data
   const payload = await getPayloadClient()
-  const settings = (await payload.findGlobal({ slug: 'game-settings', depth: 1 })).saac
+  const settings = (await payload.findGlobal({ slug: 'game-settings', depth: 1 })).ratsu
   const session = await payload.findByID({ collection: 'game-sessions', id: d.sessionId, depth: 0 }).catch(() => null)
   if (!session || session.used) return error('Partie inconnue ou déjà enregistrée.', 409)
   const elapsed = Date.now() - new Date(session.startedAt).getTime()
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     if (!nickname) return json({ saved: false, rewards, error: 'Pseudo refusé (2 à 20 caractères, sans propos déplacé).' })
     await payload.create({
       collection: 'scores',
-      data: { game: 'the-saac', nickname, score: d.score, floor: d.floor, won: d.won, durationMs: Math.min(d.durationMs, elapsed), seed: session.seed, daily: Boolean(session.daily) },
+      data: { game: 'the-ratsu', nickname, score: d.score, floor: d.floor, won: d.won, durationMs: Math.min(d.durationMs, elapsed), seed: session.seed, daily: Boolean(session.daily) },
       overrideAccess: true,
     })
     saved = true

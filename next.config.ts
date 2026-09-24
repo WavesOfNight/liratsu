@@ -20,7 +20,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     formats: ['image/avif', 'image/webp'],
-    localPatterns: [{ pathname: '/api/media/file/**' }, { pathname: '/api/fanarts/file/**' }, { pathname: '/img/**' }],
+    localPatterns: [{ pathname: '/api/media/file/**' }, { pathname: '/api/fanarts/file/**' }, { pathname: '/api/game-assets/file/**' }, { pathname: '/img/**' }],
     remotePatterns: [
       { protocol: 'https', hostname: 'static-cdn.jtvnw.net' },
       { protocol: 'https', hostname: 'clips-media-assets2.twitch.tv' },
@@ -29,7 +29,13 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['pdfkit', 'embedded-postgres'],
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      // Cette route sert des jeux « code personnalisé » dans une iframe de notre propre
+      // page (CustomGameFrame) : elle a besoin d'être embarquable par nous-mêmes ; sa propre
+      // Content-Security-Policy (posée par la route elle-même) restreint tout le reste.
+      { source: '/api/site/arcade/:slug/render', headers: [{ key: 'X-Frame-Options', value: 'SAMEORIGIN' }] },
+    ]
   },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {

@@ -8,8 +8,11 @@ import { fr } from '@payloadcms/translations/languages/fr'
 
 import { ActivityLog, GameSessions, Scores } from './collections/Arcade'
 import { Announcements, Downloads, Fanarts, Guestbook, Members, NotifySignups, PollVotes, Polls, ProtectedFiles, SurpriseCodes } from './collections/Community'
+import { GameAssets } from './collections/GameAssets'
+import { Games } from './collections/Games'
 import { LegalPages } from './collections/LegalPages'
 import { Media } from './collections/Media'
+import { ScheduleArchive } from './collections/ScheduleArchive'
 import { Categories, Coupons, Customers, Orders, Products, ShippingZones, WebhookEvents } from './collections/Shop'
 import { Users } from './collections/Users'
 import { EasterEggs } from './globals/EasterEggs'
@@ -51,8 +54,11 @@ const { collections, globals } = withActivityLog(
     // Arcade
     Scores,
     GameSessions,
+    Games,
+    GameAssets,
     // Légal & système
     LegalPages,
+    ScheduleArchive,
     ActivityLog,
     WebhookEvents,
   ],

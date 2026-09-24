@@ -39,6 +39,13 @@ export const Integrations: GlobalConfig = {
               type: 'text',
               admin: { description: 'Utilisé pour le flux RSS public : aucune clé API nécessaire.' },
             },
+            {
+              name: 'vodChannelHandle',
+              label: 'Pseudo de la chaîne des rediffs (VOD)',
+              type: 'text',
+              defaultValue: 'LiratsuVOD',
+              admin: { description: 'Sans le « @ ». Utilisé pour retrouver automatiquement le lien de VOD d’un ancien planning.' },
+            },
           ],
         },
         {
@@ -124,6 +131,18 @@ export const Integrations: GlobalConfig = {
             encryptedField({ name: 'password', label: 'Mot de passe' }),
             { name: 'from', label: 'Expéditeur', type: 'text', defaultValue: 'Liratsu <boutique@liratsu.fr>' },
             { name: 'adminNotify', label: 'Email de notification interne', type: 'email' },
+          ],
+        },
+        {
+          label: 'Discord',
+          name: 'discord',
+          description: 'Webhook envoyé automatiquement à chaque changement du planning (Accueil > bloc Planning).',
+          fields: [
+            encryptedField({
+              name: 'scheduleWebhookUrl',
+              label: 'URL du webhook (planning)',
+              description: 'Discord : Paramètres du salon > Intégrations > Webhooks > Nouveau webhook > Copier l’URL',
+            }),
           ],
         },
         {

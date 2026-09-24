@@ -3,6 +3,7 @@
  * Composant serveur : les données externes (Twitch, YouTube) sont chargées ici, avec cache.
  */
 import Image from 'next/image'
+import Link from 'next/link'
 import React from 'react'
 import type { BiographyPage, HomePage, Media, SiteSetting } from '@/payload-types'
 import { getClips, getLiveStatus, getSchedule } from '@/lib/twitch'
@@ -75,37 +76,36 @@ async function renderBlock(block: Block, site: SiteSetting, isFirst: boolean): P
       return (
         <AeroWindow title={block.windowTitle || 'Planning des streams'} icon="star">
           {twitch?.length ? (
-            <ul className={styles.schedule}>
+            <ul className={styles.scheduleGrid}>
               {twitch.map((s) => {
                 const d = new Date(s.start)
                 return (
-                  <li key={s.start} className={s.canceled ? styles.cancelled : undefined}>
-                    <span className={styles.day}>{d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })}</span>
-                    <span>{d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}</span>
-                    <span>
-                      {s.title}
-                      {s.category && <span className="muted"> · {s.category}</span>}
-                      {s.canceled && ' (annulé)'}
-                    </span>
-                  </li>
+                  <ScheduleCard
+                    key={s.start}
+                    boxArtUrl={s.boxArtUrl}
+                    icon="🎮"
+                    cancelled={s.canceled}
+                    day={d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })}
+                    time={d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}
+                    title={s.category ? `${s.title} · ${s.category}` : s.title}
+                  />
                 )
               })}
             </ul>
           ) : manual.length ? (
-            <ul className={styles.schedule}>
+            <ul className={styles.scheduleGrid}>
               {manual.map((s) => (
-                <li key={s.id ?? `${s.day}${s.time}`}>
-                  <span className={styles.day}>{s.day}</span>
-                  <span>{s.time}</span>
-                  <span>
-                    {KIND_ICON[s.kind ?? 'game']} {s.title}
-                  </span>
-                </li>
+                <ScheduleCard key={s.id ?? `${s.day}${s.time}`} boxArtUrl={s.boxArtUrl} icon={KIND_ICON[s.kind ?? 'game']} day={s.day} time={s.time} title={s.title} />
               ))}
             </ul>
           ) : (
             <p className="muted">Le planning arrive bientôt… suis la chaîne pour être prévenu·e !</p>
           )}
+          <p style={{ textAlign: 'center', marginTop: 16, marginBottom: 0 }}>
+            <Link href="/planning-precedent" className="candy-btn candy-btn--ghost candy-btn--small">
+              📼 Voir les anciens plannings
+            </Link>
+          </p>
         </AeroWindow>
       )
     }
@@ -301,4 +301,27 @@ async function renderBlock(block: Block, site: SiteSetting, isFirst: boolean): P
     default:
       return null
   }
+}
+
+/** Carte carrée façon Frutiger Aero pour une case du planning (jaquette officielle en fond). */
+function ScheduleCard({ boxArtUrl, icon, day, time, title, cancelled }: { boxArtUrl?: string | null; icon: string; day: string; time: string; title: string; cancelled?: boolean }) {
+  return (
+    <li className={`${styles.scheduleCard} ${cancelled ? styles.scheduleCancelled : ''}`}>
+      {boxArtUrl ? (
+        <Image src={boxArtUrl} alt="" fill sizes="(max-width: 600px) 45vw, 220px" className={styles.scheduleArt} />
+      ) : (
+        <div className={styles.scheduleFallback} aria-hidden="true">
+          <span>{icon}</span>
+        </div>
+      )}
+      <div className={styles.scheduleOverlay}>
+        <span className={styles.scheduleDay}>{day}</span>
+        <span className={styles.scheduleTime}>{time}</span>
+        <span className={styles.scheduleTitle}>
+          {title}
+          {cancelled && ' · annulé'}
+        </span>
+      </div>
+    </li>
+  )
 }

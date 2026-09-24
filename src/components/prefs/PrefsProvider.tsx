@@ -38,9 +38,12 @@ export function PrefsProvider({ children, defaultTheme, soundsAvailable }: { chi
 
   useEffect(() => {
     const stored = readStored()
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec le stockage/API du navigateur après hydratation
-    setPrefs((p) => ({ ...p, ...stored }))
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    // Le système ne sert que de valeur de départ : s'il n'y a pas de préférence enregistrée
+    // et que l'OS demande de réduire les animations, on démarre coupé — mais le bouton reste
+    // toujours cliquable pour les réactiver explicitement (pas de blocage définitif).
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synchronisation avec le stockage/API du navigateur après hydratation
+    setPrefs((p) => ({ ...p, motion: mq.matches ? false : p.motion, ...stored }))
     setSRM(mq.matches)
     const onChange = () => setSRM(mq.matches)
     mq.addEventListener('change', onChange)
@@ -72,7 +75,9 @@ export function PrefsProvider({ children, defaultTheme, soundsAvailable }: { chi
   }, [])
 
   const value = useMemo<Ctx>(
-    () => ({ ...prefs, systemReducedMotion, effectiveMotion: prefs.motion && !systemReducedMotion, setPref, soundsAvailable }),
+    // `effectiveMotion` reflète uniquement le choix explicite de la personne : la préférence
+    // système ne fait que définir la valeur de départ (voir l'effet ci-dessus), jamais un blocage.
+    () => ({ ...prefs, systemReducedMotion, effectiveMotion: prefs.motion, setPref, soundsAvailable }),
     [prefs, systemReducedMotion, setPref, soundsAvailable],
   )
   return <PrefsContext.Provider value={value}>{children}</PrefsContext.Provider>

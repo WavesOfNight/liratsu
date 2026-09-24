@@ -87,7 +87,10 @@ export interface Config {
     members: Member;
     scores: Score;
     'game-sessions': GameSession;
+    games: Game;
+    'game-assets': GameAsset;
     'legal-pages': LegalPage;
+    'schedule-archive': ScheduleArchive;
     'activity-log': ActivityLog;
     'webhook-events': WebhookEvent;
     'payload-kv': PayloadKv;
@@ -117,7 +120,10 @@ export interface Config {
     members: MembersSelect<false> | MembersSelect<true>;
     scores: ScoresSelect<false> | ScoresSelect<true>;
     'game-sessions': GameSessionsSelect<false> | GameSessionsSelect<true>;
+    games: GamesSelect<false> | GamesSelect<true>;
+    'game-assets': GameAssetsSelect<false> | GameAssetsSelect<true>;
     'legal-pages': LegalPagesSelect<false> | LegalPagesSelect<true>;
+    'schedule-archive': ScheduleArchiveSelect<false> | ScheduleArchiveSelect<true>;
     'activity-log': ActivityLogSelect<false> | ActivityLogSelect<true>;
     'webhook-events': WebhookEventsSelect<false> | WebhookEventsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -734,6 +740,59 @@ export interface GameSession {
   createdAt: string;
 }
 /**
+ * Chaque jeu apparaît comme une borne sur /arcade. « Moteur intégré » = The Ratsu (réglages détaillés dans Réglages The Ratsu). « Code personnalisé » = ta propre page HTML/JS, injectée dans une iframe isolée.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "games".
+ */
+export interface Game {
+  id: number;
+  title: string;
+  slug?: string | null;
+  status: 'live' | 'soon' | 'off';
+  order?: number | null;
+  tagline?: string | null;
+  color?: string | null;
+  thumbnail?: (number | null) | Media;
+  engine: 'ratsu' | 'custom';
+  /**
+   * Page HTML autonome (balises <style>/<script> incluses). Rendue dans une iframe isolée : pas d’accès aux cookies ni aux données du site. Astuce : utilise window.parent.postMessage({type:'liratsu:score', score}, '*') si tu veux qu’on affiche le score (classement non certifié pour les jeux personnalisés).
+   */
+  code?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "game-assets".
+ */
+export interface GameAsset {
+  id: number;
+  label: string;
+  kind: 'sprite' | 'music';
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumb?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
  * Pages juridiques gérées par Reads Records. Chaque enregistrement crée une version consultable.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -764,6 +823,23 @@ export interface LegalPage {
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "schedule-archive".
+ */
+export interface ScheduleArchive {
+  id: number;
+  date: string;
+  title: string;
+  game?: string | null;
+  boxArtUrl?: string | null;
+  kind?: ('game' | 'art' | 'music' | 'chat') | null;
+  vodUrl?: string | null;
+  vodFound?: boolean | null;
+  vodTitle?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -898,8 +974,20 @@ export interface PayloadLockedDocument {
         value: number | GameSession;
       } | null)
     | ({
+        relationTo: 'games';
+        value: number | Game;
+      } | null)
+    | ({
+        relationTo: 'game-assets';
+        value: number | GameAsset;
+      } | null)
+    | ({
         relationTo: 'legal-pages';
         value: number | LegalPage;
+      } | null)
+    | ({
+        relationTo: 'schedule-archive';
+        value: number | ScheduleArchive;
       } | null)
     | ({
         relationTo: 'activity-log';
@@ -1443,6 +1531,56 @@ export interface GameSessionsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "games_select".
+ */
+export interface GamesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  status?: T;
+  order?: T;
+  tagline?: T;
+  color?: T;
+  thumbnail?: T;
+  engine?: T;
+  code?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "game-assets_select".
+ */
+export interface GameAssetsSelect<T extends boolean = true> {
+  label?: T;
+  kind?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumb?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "legal-pages_select".
  */
 export interface LegalPagesSelect<T extends boolean = true> {
@@ -1455,6 +1593,22 @@ export interface LegalPagesSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "schedule-archive_select".
+ */
+export interface ScheduleArchiveSelect<T extends boolean = true> {
+  date?: T;
+  title?: T;
+  game?: T;
+  boxArtUrl?: T;
+  kind?: T;
+  vodUrl?: T;
+  vodFound?: T;
+  vodTitle?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1660,6 +1814,8 @@ export interface HomePage {
                   time: string;
                   title: string;
                   kind?: ('game' | 'art' | 'music' | 'chat') | null;
+                  game?: string | null;
+                  boxArtUrl?: string | null;
                   id?: string | null;
                 }[]
               | null;
@@ -1992,7 +2148,7 @@ export interface EasterEgg {
  */
 export interface GameSetting {
   id: number;
-  saac?: {
+  ratsu?: {
     enabled?: boolean | null;
     leaderboardEnabled?: boolean | null;
     difficulty?: ('easy' | 'normal' | 'hard') | null;
@@ -2008,6 +2164,41 @@ export interface GameSetting {
           threshold?: number | null;
           reward: number | SurpriseCode;
           message?: string | null;
+          id?: string | null;
+        }[]
+      | null;
+    spriteOverrides?:
+      | {
+          key:
+            | 'player'
+            | 'floorTile'
+            | 'wallTile'
+            | 'rockTile'
+            | 'pickupCoin'
+            | 'pickupHeart'
+            | 'enemyGoldfish'
+            | 'enemyBubble'
+            | 'enemyPopup'
+            | 'enemyCursor'
+            | 'enemyLag'
+            | 'enemyTroll'
+            | 'bossPopup'
+            | 'bossSun';
+          image: number | GameAsset;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Jouées en boucle pendant la partie (coupées par défaut, un bouton 🎵 permet de les activer). Sans piste : silence.
+     */
+    musicTracks?:
+      | {
+          title: string;
+          file: number | GameAsset;
+          /**
+           * 1 = dès le début. Utilisé pour changer de piste en montant d’étage.
+           */
+          floorFrom?: number | null;
           id?: string | null;
         }[]
       | null;
@@ -2115,6 +2306,10 @@ export interface Integration {
      * Utilisé pour le flux RSS public : aucune clé API nécessaire.
      */
     channelId?: string | null;
+    /**
+     * Sans le « @ ». Utilisé pour retrouver automatiquement le lien de VOD d’un ancien planning.
+     */
+    vodChannelHandle?: string | null;
   };
   stripe?: {
     test?: {
@@ -2179,6 +2374,12 @@ export interface Integration {
     password?: string | null;
     from?: string | null;
     adminNotify?: string | null;
+  };
+  discord?: {
+    /**
+     * Discord : Paramètres du salon > Intégrations > Webhooks > Nouveau webhook > Copier l’URL — Stocké chiffré, jamais affiché en clair. Laisser le masque pour conserver la valeur.
+     */
+    scheduleWebhookUrl?: string | null;
   };
   analytics?: {
     provider?: ('none' | 'umami' | 'plausible') | null;
@@ -2335,6 +2536,8 @@ export interface HomePageSelect<T extends boolean = true> {
                     time?: T;
                     title?: T;
                     kind?: T;
+                    game?: T;
+                    boxArtUrl?: T;
                     id?: T;
                   };
               id?: T;
@@ -2601,7 +2804,7 @@ export interface EasterEggsSelect<T extends boolean = true> {
  * via the `definition` "game-settings_select".
  */
 export interface GameSettingsSelect<T extends boolean = true> {
-  saac?:
+  ratsu?:
     | T
     | {
         enabled?: T;
@@ -2617,6 +2820,21 @@ export interface GameSettingsSelect<T extends boolean = true> {
               threshold?: T;
               reward?: T;
               message?: T;
+              id?: T;
+            };
+        spriteOverrides?:
+          | T
+          | {
+              key?: T;
+              image?: T;
+              id?: T;
+            };
+        musicTracks?:
+          | T
+          | {
+              title?: T;
+              file?: T;
+              floorFrom?: T;
               id?: T;
             };
       };
@@ -2706,6 +2924,7 @@ export interface IntegrationsSelect<T extends boolean = true> {
     | T
     | {
         channelId?: T;
+        vodChannelHandle?: T;
       };
   stripe?:
     | T
@@ -2759,6 +2978,11 @@ export interface IntegrationsSelect<T extends boolean = true> {
         password?: T;
         from?: T;
         adminNotify?: T;
+      };
+  discord?:
+    | T
+    | {
+        scheduleWebhookUrl?: T;
       };
   analytics?:
     | T

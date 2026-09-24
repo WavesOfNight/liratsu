@@ -1,0 +1,16 @@
+.frameWrap {
+  display: grid;
+  gap: 10px;
+}
+.frame {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 4px solid #fff;
+  border-radius: 16px;
+  box-shadow: var(--shadow-pop);
+  background: #0b1a3a;
+}
+.score {
+  margin: 0;
+  font-weight: 700;
+}

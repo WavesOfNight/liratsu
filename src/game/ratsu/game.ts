@@ -1,11 +1,12 @@
 /**
- * The Saac — moteur du jeu (Canvas 2D, rendu basse résolution « pixel art »).
+ * The Ratsu — moteur du jeu (Canvas 2D, rendu basse résolution « pixel art »).
  * Die & retry vu de dessus : salles procédurales, ennemis thématiques internet/aquarium,
  * objets cumulables, boss à chaque étage, mort permanente.
  */
 import { COLS, DIRS, type Dir, type Floor, generateFloor, OPPOSITE, type Room, ROWS, roomAt } from './dungeon'
 import type { Input } from './input'
 import { BASE_STATS, type Item, ITEMS, type Stats } from './items'
+import type { SpriteOverrides } from './overrides'
 import { createRng, type Rng } from './rng'
 import { drawHeart, sprites } from './sprites'
 
@@ -37,6 +38,10 @@ type Options = {
   floors: number
   onEnd: (r: GameResult) => void
   onSound?: (s: SoundName) => void
+  /** Étage courant, pour permettre au composant React de changer la musique d'ambiance. */
+  onFloorChange?: (floor: number) => void
+  /** Sprites/tileset personnalisés uploadés dans l'admin ; clés manquantes = art intégré. */
+  sprites?: SpriteOverrides
 }
 
 const DIFF: Record<Difficulty, number> = { easy: 0.8, normal: 1, hard: 1.3 }
@@ -94,6 +99,12 @@ export class Game {
     if (index > 0) this.score += 200
     this.enterRoom(this.floor.start, null)
     this.say(`Étage ${index + 1}${index + 1 === this.opts.floors ? ' — dernier !' : ''}`)
+    this.opts.onFloorChange?.(index + 1)
+  }
+
+  /** Image personnalisée pour cette clé, si l'admin en a fourni une (sinon `null`). */
+  private ov(key: string): HTMLImageElement | null {
+    return this.opts.sprites?.[key] ?? null
   }
 
   private enterRoom(room: Room, from: Dir | null) {
@@ -506,14 +517,23 @@ export class Game {
 
   private renderRoom() {
     const c = this.ctx
-    // Eau et damier doux
-    const g = c.createLinearGradient(0, TOP, 0, BOTTOM)
-    g.addColorStop(0, '#7fd0ff')
-    g.addColorStop(1, '#2a86e0')
-    c.fillStyle = g
-    c.fillRect(LEFT, TOP, COLS * TILE, ROWS * TILE)
-    c.fillStyle = 'rgba(255,255,255,0.07)'
-    for (let x = 0; x < COLS; x++) for (let y = 0; y < ROWS; y++) if ((x + y) % 2 === 0) c.fillRect(LEFT + x * TILE, TOP + y * TILE, TILE, TILE)
+    // Eau et damier doux (ou tileset personnalisé)
+    const floorTile = this.ov('floorTile')
+    if (floorTile) {
+      const pat = c.createPattern(floorTile, 'repeat')
+      if (pat) {
+        c.fillStyle = pat
+        c.fillRect(LEFT, TOP, COLS * TILE, ROWS * TILE)
+      }
+    } else {
+      const g = c.createLinearGradient(0, TOP, 0, BOTTOM)
+      g.addColorStop(0, '#7fd0ff')
+      g.addColorStop(1, '#2a86e0')
+      c.fillStyle = g
+      c.fillRect(LEFT, TOP, COLS * TILE, ROWS * TILE)
+      c.fillStyle = 'rgba(255,255,255,0.07)'
+      for (let x = 0; x < COLS; x++) for (let y = 0; y < ROWS; y++) if ((x + y) % 2 === 0) c.fillRect(LEFT + x * TILE, TOP + y * TILE, TILE, TILE)
+    }
     // Rayons de lumière
     c.fillStyle = 'rgba(255,255,255,0.08)'
     for (let i = 0; i < 3; i++) {
@@ -525,14 +545,18 @@ export class Game {
       c.lineTo(x - 50, BOTTOM)
       c.fill()
     }
-    // Murs : verre épais glossy
-    c.fillStyle = this.room.kind === 'boss' ? '#3a1d5c' : this.room.kind === 'shop' ? '#1a6f5c' : '#123c72'
+    // Murs : verre épais glossy (ou tileset personnalisé)
+    const wallTile = this.ov('wallTile')
+    const wallPattern = wallTile && c.createPattern(wallTile, 'repeat')
+    c.fillStyle = wallPattern || (this.room.kind === 'boss' ? '#3a1d5c' : this.room.kind === 'shop' ? '#1a6f5c' : '#123c72')
     c.fillRect(0, 0, W, TOP)
     c.fillRect(0, BOTTOM, W, TILE)
     c.fillRect(0, 0, LEFT, H)
     c.fillRect(RIGHT, 0, TILE, H)
-    c.fillStyle = 'rgba(255,255,255,0.18)'
-    c.fillRect(0, 0, W, 4)
+    if (!wallPattern) {
+      c.fillStyle = 'rgba(255,255,255,0.18)'
+      c.fillRect(0, 0, W, 4)
+    }
     c.strokeStyle = '#bfe8ff'
     c.lineWidth = 2
     c.strokeRect(LEFT - 1, TOP - 1, COLS * TILE + 2, ROWS * TILE + 2)
@@ -556,10 +580,15 @@ export class Game {
     door(CX - TILE / 2, BOTTOM, TILE, TILE - 2, 'down')
     door(2, CY - TILE / 2, LEFT - 2, TILE, 'left')
     door(RIGHT, CY - TILE / 2, TILE - 2, TILE, 'right')
-    // Rochers : coraux-bulles roses
+    // Rochers : coraux-bulles roses (ou image personnalisée)
+    const rockTile = this.ov('rockTile')
     for (const [rx, ry] of this.room.rocks) {
       const x = LEFT + rx * TILE
       const y = TOP + ry * TILE
+      if (rockTile) {
+        c.drawImage(rockTile, x, y, TILE, TILE)
+        continue
+      }
       c.fillStyle = '#ff7eb6'
       c.beginPath()
       c.arc(x + 8, y + 14, 7, 0, Math.PI * 2)
@@ -574,14 +603,34 @@ export class Game {
   private renderPlayer() {
     const c = this.ctx
     if (this.invuln > 0 && Math.floor(this.time * 20) % 2 === 0) return
-    const sp = sprites()
-    const img = this.facingLeft ? sp.playerLeft : sp.player
     const bob = Math.abs(this.input.move.x) + Math.abs(this.input.move.y) > 0 ? Math.round(Math.sin(this.time * 14)) : 0
     c.fillStyle = 'rgba(11,26,58,0.35)'
     c.beginPath()
     c.ellipse(this.px, this.py + 8, 6, 2, 0, 0, Math.PI * 2)
     c.fill()
+    const custom = this.ov('player')
+    if (custom) {
+      const size = 20
+      c.save()
+      c.translate(Math.round(this.px), Math.round(this.py - 1 + bob))
+      if (this.facingLeft) c.scale(-1, 1)
+      c.drawImage(custom, -size / 2, -size / 2, size, size)
+      c.restore()
+      return
+    }
+    const sp = sprites()
+    const img = this.facingLeft ? sp.playerLeft : sp.player
     c.drawImage(img, Math.round(this.px - 6), Math.round(this.py - 9 + bob))
+  }
+
+  private static readonly ENEMY_SPRITE_KEYS: Record<EnemyKind, string> = {
+    goldfish: 'enemyGoldfish',
+    bubble: 'enemyBubble',
+    popup: 'enemyPopup',
+    cursor: 'enemyCursor',
+    lag: 'enemyLag',
+    troll: 'enemyTroll',
+    boss: 'bossPopup', // résolu dynamiquement ci-dessous (pop-up ou soleil selon l'étage)
   }
 
   private renderEnemy(e: Enemy) {
@@ -589,6 +638,24 @@ export class Game {
     const x = Math.round(e.x)
     const y = Math.round(e.y)
     const flash = e.flash > 0
+    const overrideKey = e.kind === 'boss' ? (this.floorIndex % 2 === 0 ? 'bossPopup' : 'bossSun') : Game.ENEMY_SPRITE_KEYS[e.kind]
+    const custom = this.ov(overrideKey)
+    if (custom) {
+      const size = e.kind === 'boss' ? 56 : e.r * 2.6
+      const dir = e.kind === 'goldfish' && this.px < e.x ? -1 : 1
+      c.save()
+      c.translate(x, y)
+      c.scale(dir, 1)
+      c.drawImage(custom, -size / 2, -size / 2, size, size)
+      c.restore()
+      if (e.kind === 'boss') {
+        c.fillStyle = '#1b2240'
+        c.fillRect(LEFT + 60, BOTTOM - 10, COLS * TILE - 120, 6)
+        c.fillStyle = '#ff5a7a'
+        c.fillRect(LEFT + 61, BOTTOM - 9, (COLS * TILE - 122) * Math.max(0, e.hp / e.maxHp), 4)
+      }
+      return
+    }
     switch (e.kind) {
       case 'goldfish': {
         const dir = this.px < e.x ? -1 : 1
@@ -744,16 +811,24 @@ export class Game {
       return
     }
     if (p.kind === 'coin') {
-      c.fillStyle = '#ffd35c'
-      c.beginPath()
-      c.moveTo(p.x, p.y - 5 + bob)
-      c.lineTo(p.x + 5, p.y + 3 + bob)
-      c.lineTo(p.x - 5, p.y + 3 + bob)
-      c.fill()
-      c.fillStyle = '#fff4c2'
-      c.fillRect(p.x - 1, p.y - 2 + bob, 2, 2)
+      const custom = this.ov('pickupCoin')
+      if (custom) c.drawImage(custom, p.x - 8, p.y - 8 + bob, 16, 16)
+      else {
+        c.fillStyle = '#ffd35c'
+        c.beginPath()
+        c.moveTo(p.x, p.y - 5 + bob)
+        c.lineTo(p.x + 5, p.y + 3 + bob)
+        c.lineTo(p.x - 5, p.y + 3 + bob)
+        c.fill()
+        c.fillStyle = '#fff4c2'
+        c.fillRect(p.x - 1, p.y - 2 + bob, 2, 2)
+      }
     }
-    if (p.kind === 'heart') drawHeart(c, Math.round(p.x - 3), Math.round(p.y - 3 + bob), 1)
+    if (p.kind === 'heart') {
+      const custom = this.ov('pickupHeart')
+      if (custom) c.drawImage(custom, p.x - 8, p.y - 8 + bob, 16, 16)
+      else drawHeart(c, Math.round(p.x - 3), Math.round(p.y - 3 + bob), 1)
+    }
     if (p.kind === 'item' && p.item) {
       c.fillStyle = '#eaf5ff'
       c.fillRect(p.x - 9, p.y + 6, 18, 6) // piédestal
@@ -846,13 +921,13 @@ export class Game {
     c.font = 'bold 34px sans-serif'
     c.lineWidth = 4
     c.strokeStyle = '#fff'
-    c.strokeText('The Saac', CX, 80)
+    c.strokeText('The Ratsu', CX, 80)
     c.fillStyle = '#1e6fd9'
-    c.fillText('The Saac', CX, 80)
+    c.fillText('The Ratsu', CX, 80)
     c.font = '10px sans-serif'
     c.fillStyle = '#fff'
     c.fillText(this.opts.daily ? '✦ Défi du jour ✦' : 'Mode libre', CX, 100)
-    c.drawImage(sprites().player, CX - 12, 112, 24, 28)
+    c.drawImage(this.ov('player') ?? sprites().player, CX - 12, 112, 24, 28)
     if (Math.floor(this.time * 2) % 2 === 0) {
       c.font = 'bold 10px sans-serif'
       c.fillText('Entrée / A / touche l’écran pour plonger', CX, 165)

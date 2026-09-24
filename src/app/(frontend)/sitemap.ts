@@ -17,6 +17,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const products = await payload.find({ collection: 'products', where: { _status: { equals: 'published' } }, limit: 500, depth: 0 })
     products.docs.forEach((p) => entries.push({ url: absoluteUrl(site, `/boutique/${p.slug}`), lastModified: p.updatedAt, priority: 0.6 }))
   }
-  if (sectionState(site, 'arcade').status === 'on') entries.push({ url: absoluteUrl(site, '/arcade/the-saac'), priority: 0.5 })
+  if (sectionState(site, 'arcade').status === 'on') {
+    const games = await payload.find({ collection: 'games', where: { status: { equals: 'live' } }, limit: 100, depth: 0 })
+    games.docs.forEach((g) => entries.push({ url: absoluteUrl(site, `/arcade/${g.slug}`), lastModified: g.updatedAt, priority: 0.5 }))
+  }
+  if (sectionState(site, 'home').status === 'on') entries.push({ url: absoluteUrl(site, '/planning-precedent'), priority: 0.3 })
   return entries
 }

@@ -33,7 +33,7 @@ export const Scores: CollectionConfig = {
     delete: isModerator,
   },
   fields: [
-    { name: 'game', type: 'text', required: true, defaultValue: 'the-saac', index: true },
+    { name: 'game', type: 'text', required: true, defaultValue: 'the-ratsu', index: true },
     { name: 'nickname', label: 'Pseudo', type: 'text', required: true },
     { name: 'score', type: 'number', required: true, index: true },
     { name: 'floor', label: 'Étage', type: 'number', required: true },

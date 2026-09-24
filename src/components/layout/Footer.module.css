@@ -67,16 +67,23 @@
   font-weight: 600;
   color: var(--text-soft);
 }
-.wrench,
+.avatar,
 .star {
   display: inline-flex;
   transition: transform 0.6s ease;
 }
+.avatar {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(30, 111, 217, 0.3);
+  background: var(--c-cloud, #f4f8ff);
+}
 .star {
   color: #c79a00;
 }
-.animated:hover .wrench {
-  transform: rotate(-40deg);
+.animated:hover .avatar {
+  transform: rotate(-14deg) scale(1.12);
   animation: wiggle 0.6s ease-in-out 2;
 }
 .animated:hover .star {
@@ -84,6 +91,6 @@
 }
 @keyframes wiggle {
   50% {
-    transform: rotate(30deg);
+    transform: rotate(10deg) scale(1.12);
   }
 }

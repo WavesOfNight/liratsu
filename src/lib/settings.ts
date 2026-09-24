@@ -15,11 +15,12 @@ const pick = (...values: (string | null | undefined)[]): string => values.find((
 
 export type ResolvedIntegrations = {
   twitch: { channelLogin: string; clientId: string; clientSecret: string; oauthEnabled: boolean }
-  youtube: { channelId: string }
+  youtube: { channelId: string; vodChannelHandle: string }
   stripe: { publishableKey: string; secretKey: string; webhookSecret: string }
   paypal: { clientId: string; clientSecret: string; webhookId: string; apiBase: string }
   gelato: { apiKey: string; webhookToken: string }
   smtp: { host: string; port: number; secure: boolean; user: string; password: string; from: string; adminNotify: string }
+  discord: { scheduleWebhookUrl: string }
   analytics: { provider: 'none' | 'umami' | 'plausible'; scriptUrl: string; siteId: string }
   testMode: boolean
 }
@@ -53,7 +54,10 @@ export async function getIntegrations(): Promise<ResolvedIntegrations> {
       clientSecret: pick(s(r.twitch, 'clientSecret'), env.TWITCH_CLIENT_SECRET),
       oauthEnabled: Boolean(r.twitch?.oauthEnabled),
     },
-    youtube: { channelId: pick(s(r.youtube, 'channelId'), env.YOUTUBE_CHANNEL_ID) },
+    youtube: {
+      channelId: pick(s(r.youtube, 'channelId'), env.YOUTUBE_CHANNEL_ID),
+      vodChannelHandle: pick(s(r.youtube, 'vodChannelHandle'), env.YOUTUBE_VOD_CHANNEL_HANDLE, 'LiratsuVOD'),
+    },
     stripe: {
       publishableKey: pick(s(stripeRaw, 'publishableKey'), testMode ? env.STRIPE_TEST_PUBLISHABLE_KEY : env.STRIPE_LIVE_PUBLISHABLE_KEY),
       secretKey: pick(s(stripeRaw, 'secretKey'), testMode ? env.STRIPE_TEST_SECRET_KEY : env.STRIPE_LIVE_SECRET_KEY),
@@ -77,6 +81,9 @@ export async function getIntegrations(): Promise<ResolvedIntegrations> {
       password: pick(s(r.smtp, 'password'), env.SMTP_PASSWORD),
       from: pick(s(r.smtp, 'from'), env.SMTP_FROM, 'Liratsu <no-reply@liratsu.fr>'),
       adminNotify: pick(s(r.smtp, 'adminNotify'), env.ADMIN_NOTIFY_EMAIL),
+    },
+    discord: {
+      scheduleWebhookUrl: pick(s(r.discord, 'scheduleWebhookUrl'), env.DISCORD_SCHEDULE_WEBHOOK_URL),
     },
     analytics: {
       provider: (s(r.analytics, 'provider') || 'none') as ResolvedIntegrations['analytics']['provider'],

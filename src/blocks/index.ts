@@ -49,6 +49,11 @@ export const ScheduleBlock: Block = {
       ],
     },
     {
+      name: 'discordAction',
+      type: 'ui',
+      admin: { components: { Field: '@/components/admin/SendScheduleToDiscord#SendScheduleToDiscord' } },
+    },
+    {
       name: 'manual',
       label: 'Planning manuel',
       type: 'array',
@@ -77,6 +82,19 @@ export const ScheduleBlock: Block = {
                 { label: 'Discussion', value: 'chat' },
               ],
             },
+          ],
+        },
+        {
+          type: 'row',
+          admin: { condition: (_, siblingData) => siblingData?.kind === 'game' },
+          fields: [
+            {
+              name: 'game',
+              label: 'Jeu (recherche la miniature officielle)',
+              type: 'text',
+              admin: { width: '60%', components: { Field: '@/components/admin/GamePicker#GamePicker' } },
+            },
+            { name: 'boxArtUrl', label: 'Miniature (auto)', type: 'text', admin: { width: '40%', readOnly: true } },
           ],
         },
       ],

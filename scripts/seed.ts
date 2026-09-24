@@ -24,6 +24,32 @@ async function findOne(collection: Parameters<Payload['find']>[0]['collection'],
   return r.docs[0] as { id: number } | undefined
 }
 
+/** Démonstration du système « jeu personnalisé » : une page HTML/JS autonome, à coller telle quelle
+ * dans l'admin (Arcade > Jeux > Code du jeu). Rendue dans une iframe isolée sur le site public. */
+const DEMO_CUSTOM_GAME = `<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  html,body{margin:0;height:100%;background:linear-gradient(#8fd3ff,#1e6fd9);overflow:hidden;font-family:sans-serif}
+  #score{position:fixed;top:8px;left:8px;color:#fff;font-weight:bold;font-size:20px;text-shadow:0 2px 4px rgba(0,0,0,.3)}
+  .bubble{position:absolute;width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff,#bfe8ff 60%,#3fa9f5);border:2px solid #fff;cursor:pointer}
+</style></head><body>
+  <div id="score">Score : 0</div>
+  <script>
+    let score = 0;
+    const scoreEl = document.getElementById('score');
+    function spawn() {
+      const b = document.createElement('div');
+      b.className = 'bubble';
+      b.style.left = Math.random() * (innerWidth - 44) + 'px';
+      b.style.top = Math.random() * (innerHeight - 44) + 'px';
+      b.onclick = () => { score++; scoreEl.textContent = 'Score : ' + score; b.remove(); spawn(); };
+      document.body.appendChild(b);
+      setTimeout(() => { if (b.isConnected) { b.remove(); spawn(); } }, 2200);
+    }
+    for (let i = 0; i < 5; i++) spawn();
+    setInterval(() => window.parent.postMessage({ type: 'liratsu:score', score }, '*'), 1000);
+  </script>
+</body></html>`
+
 console.log('🌊 Seed Liratsu…')
 
 // ---- Compte admin -----------------------------------------------------------
@@ -135,7 +161,7 @@ if (!links.links?.length) {
         { label: 'Le Discord de la commu', url: 'https://discord.gg/aHWbGZH6g2', icon: 'discord', color: 'lagoon' },
         { label: 'Instagram', url: 'https://www.instagram.com/liratsu/', icon: 'instagram', color: 'candy' },
         { label: 'TikTok', url: 'https://www.tiktok.com/@liratsu_', icon: 'tiktok', color: 'star' },
-        { label: 'Jouer à The Saac', url: '/arcade/the-saac', icon: 'gamepad', color: 'lime' },
+        { label: 'Jouer à The Ratsu', url: '/arcade/the-ratsu', icon: 'gamepad', color: 'lime' },
       ],
     },
   })
@@ -239,7 +265,7 @@ if (!wallpaper) {
 const codes = [
   { code: 'BULLE-DEMO', source: 'live' as const, message: 'Code donné en live : bravo !' },
   { code: 'GLOUGLOU-DEMO', source: 'easterEgg' as const, message: 'Tu as trouvé le poisson doré !' },
-  { code: 'SAAC-DEMO', source: 'game' as const, message: 'Débloqué dans The Saac !' },
+  { code: 'RATSU-DEMO', source: 'game' as const, message: 'Débloqué dans The Ratsu !' },
 ]
 const codeIds: Record<string, number> = {}
 for (const c of codes) {
@@ -248,10 +274,10 @@ for (const c of codes) {
 }
 await payload.updateGlobal({ slug: 'easter-eggs', data: { secretReward: codeIds['GLOUGLOU-DEMO'] } })
 const game = await payload.findGlobal({ slug: 'game-settings' })
-if (!game.saac?.unlocks?.length) {
+if (!game.ratsu?.unlocks?.length) {
   await payload.updateGlobal({
     slug: 'game-settings',
-    data: { saac: { ...game.saac, unlocks: [{ condition: 'floor', threshold: 3, reward: codeIds['SAAC-DEMO'], message: 'Étage 3 atteint : un fond d’écran se débloque !' }] } },
+    data: { ratsu: { ...game.ratsu, unlocks: [{ condition: 'floor', threshold: 3, reward: codeIds['RATSU-DEMO'], message: 'Étage 3 atteint : un fond d’écran se débloque !' }] } },
   })
 }
 if (!(await findOne('polls', { question: { like: 'prochain stream' } }))) {
@@ -261,9 +287,41 @@ if (!(await findOne('polls', { question: { like: 'prochain stream' } }))) {
   })
 }
 if (!(await findOne('announcements', { title: { like: 'Bienvenue' } }))) {
-  await payload.create({ collection: 'announcements', data: { title: 'Bienvenue sur le nouveau site !', pinned: true, body: md('Le site officiel est en ligne ✦ Explore, joue à **The Saac** et cherche les easter eggs…') } })
+  await payload.create({ collection: 'announcements', data: { title: 'Bienvenue sur le nouveau site !', pinned: true, body: md('Le site officiel est en ligne ✦ Explore, joue à **The Ratsu** et cherche les easter eggs…') } })
 }
 log('Communauté, codes surprise, sondage')
+
+// ---- Arcade : registre des jeux -----------------------------------------------
+if (!(await findOne('games', { slug: { equals: 'the-ratsu' } }))) {
+  await payload.create({
+    collection: 'games',
+    data: {
+      title: 'The Ratsu',
+      slug: 'the-ratsu',
+      status: 'live',
+      order: 0,
+      tagline: 'Die & retry aquatique : bulles, poissons rouges et pop-ups d’erreur.',
+      color: '#3FA9F5',
+      engine: 'ratsu',
+    },
+  })
+}
+if (!(await findOne('games', { slug: { equals: 'bulle-panik' } }))) {
+  await payload.create({
+    collection: 'games',
+    data: {
+      title: 'Bulle Panik',
+      slug: 'bulle-panik',
+      status: 'live',
+      order: 1,
+      tagline: 'Un mini-jeu de démonstration codé en HTML/JS, ajouté depuis l’admin.',
+      color: '#FF7EB6',
+      engine: 'custom',
+      code: DEMO_CUSTOM_GAME,
+    },
+  })
+}
+log('Arcade : jeux')
 
 console.log('✔ Seed terminé.')
 process.exit(0)
