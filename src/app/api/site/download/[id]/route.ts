@@ -31,7 +31,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const entry = dl.files?.find((f) => f.format === format) ?? dl.files?.[0]
   const file = entry?.file
   if (!file || typeof file !== 'object' || !file.filename) return error('Fichier indisponible.', 404)
-  const dir = path.resolve(process.cwd(), 'protected-files')
+  // Lu depuis une variable d'environnement (pas de path.resolve(process.cwd(), 'literal') en dur) :
+  // en déploiement par releases, ce dossier est un lien symbolique qui sort du dossier de la
+  // release, et le traceur de build de Next.js (Turbopack) refuse de le suivre s'il détecte
+  // l'appel littéral au moment du build — voir .env.example.
+  const dir = path.resolve(process.env.PROTECTED_FILES_DIR || 'protected-files')
   const full = path.resolve(dir, file.filename)
   if (!full.startsWith(dir + path.sep)) return error('Chemin invalide.', 400)
   const data = await readFile(full).catch(() => null)
