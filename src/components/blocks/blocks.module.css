@@ -61,6 +61,20 @@
   margin: 0;
   font-size: 1.05rem;
 }
+.tagline,
+.intro {
+  /* Halo pour rester lisible posé directement sur la photo de fond (ciel/pelouse, étoiles). */
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.9),
+    0 0 14px rgba(255, 255, 255, 0.75),
+    0 0 28px rgba(255, 255, 255, 0.45);
+}
+:global(:root[data-theme='dark']) .tagline,
+:global(:root[data-theme='dark']) .intro {
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.7),
+    0 0 14px rgba(0, 0, 0, 0.5);
+}
 .heroActions {
   display: flex;
   gap: 10px;
