@@ -59,28 +59,36 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
         </nav>
         <CartBadge />
       </div>
-      <ul className={styles.grid}>
-        {products.docs.map((p) => {
-          const img = mediaUrl(p.images?.[0]?.image, 'card')
-          const prices = (p.variants ?? []).map((v) => toCents(v.price ?? p.price))
-          const min = prices.length ? Math.min(...prices) : toCents(p.price)
-          return (
-            <li key={p.id}>
-              <Link href={`/boutique/${p.slug}`} className={styles.card}>
-                {img && <Image src={img} alt="" width={480} height={480} sizes="(max-width: 600px) 100vw, 300px" />}
-                {p.badge && <span className={`sticker ${styles.cardBadge}`}>{p.badge}</span>}
-                <span className={styles.cardTitle}>{p.title}</span>
-                <span>
-                  {prices.length > 1 && new Set(prices).size > 1 ? 'dès ' : ''}
-                  <strong>{formatEuros(min)}</strong>
-                  {p.compareAtPrice ? <span className={styles.compare}>{formatEuros(toCents(p.compareAtPrice))}</span> : null}
-                </span>
-              </Link>
-            </li>
-          )
-        })}
-        {products.docs.length === 0 && <li className="muted">Aucun produit pour le moment… ça arrive !</li>}
-      </ul>
+      {products.docs.length === 0 ? (
+        <div className={styles.empty}>
+          <span className={styles.emptyIcon} aria-hidden="true">
+            🐟
+          </span>
+          <p>Aucun produit pour le moment… la boutique mijote encore, reviens vite ✦</p>
+        </div>
+      ) : (
+        <ul className={styles.grid}>
+          {products.docs.map((p) => {
+            const img = mediaUrl(p.images?.[0]?.image, 'card')
+            const prices = (p.variants ?? []).map((v) => toCents(v.price ?? p.price))
+            const min = prices.length ? Math.min(...prices) : toCents(p.price)
+            return (
+              <li key={p.id}>
+                <Link href={`/boutique/${p.slug}`} className={styles.card}>
+                  {img && <Image src={img} alt="" width={480} height={480} sizes="(max-width: 600px) 100vw, 300px" />}
+                  {p.badge && <span className={`sticker ${styles.cardBadge}`}>{p.badge}</span>}
+                  <span className={styles.cardTitle}>{p.title}</span>
+                  <span>
+                    {prices.length > 1 && new Set(prices).size > 1 ? 'dès ' : ''}
+                    <strong>{formatEuros(min)}</strong>
+                    {p.compareAtPrice ? <span className={styles.compare}>{formatEuros(toCents(p.compareAtPrice))}</span> : null}
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
+      )}
     </div>
   )
 }
