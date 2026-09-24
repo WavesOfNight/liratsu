@@ -65,7 +65,7 @@ on_error() {
   log "Échec — nettoyage et retour arrière"
   if [[ $MIGRATED -eq 1 && -n "$DB_BACKUP" ]]; then
     log "Restauration de la base depuis $DB_BACKUP"
-    set -a; source shared/.env; set +a
+    set -a; source "$APP_ROOT/shared/.env"; set +a
     pg_restore --clean --if-exists --no-owner -d "$DATABASE_URL" "$DB_BACKUP" || true
   fi
   if [[ -n "$PREVIOUS" && -d "$PREVIOUS" ]]; then switch_to "$PREVIOUS" || true; fi
@@ -78,8 +78,11 @@ git clone --depth 1 --branch "$BRANCH" "$REPO" "$RELEASE"
 
 log "Liens vers les fichiers partagés"
 mkdir -p shared/{media,fanarts,protected-files,backups,logs}
-ln -sfn "$APP_ROOT/shared/.env" "$RELEASE/.env"
-for d in media fanarts protected-files; do ln -sfn "$APP_ROOT/shared/$d" "$RELEASE/$d"; done
+# Liens relatifs (pas absolus) : certains hébergeurs (CageFS/chroot sous Plesk) exposent
+# APP_ROOT dans un espace de noms différent pour les process du domaine, ce qui rend un
+# symlink absolu invalide ("points out of the filesystem root") vu depuis l'intérieur du build.
+ln -sfn "../../shared/.env" "$RELEASE/.env"
+for d in media fanarts protected-files; do ln -sfn "../../shared/$d" "$RELEASE/$d"; done
 
 cd "$RELEASE"
 log "Installation des dépendances (npm ci)"
