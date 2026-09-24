@@ -1,3 +1,4 @@
+import type { TextField } from 'payload'
 import type { GlobalConfig } from 'payload'
 import { isAdmin } from '@/access/roles'
 import { encryptedField } from '@/fields/encrypted'
@@ -8,6 +9,21 @@ import { revalidateAll } from '@/hooks/revalidate'
  * Les secrets sont chiffrés en base. Si un champ est vide, la variable d'environnement
  * équivalente (voir .env.example) est utilisée en repli.
  */
+
+/**
+ * Champ texte pour un identifiant collé depuis un tableau de bord externe (Client ID,
+ * nom de chaîne, URL…) : un copier-coller ramène facilement un espace ou un retour à la
+ * ligne en trop, invisible à l'écran, qui fait échouer la comparaison exacte attendue par
+ * le service externe (ex. Twitch renvoie un 403 sans autre explication). On coupe donc
+ * systématiquement les espaces en trop à l'enregistrement.
+ */
+function trimmedText(field: { name: string; label: string; defaultValue?: string; admin?: TextField['admin'] }): TextField {
+  return {
+    ...field,
+    type: 'text',
+    hooks: { beforeChange: [({ value }) => (typeof value === 'string' ? value.trim() : value)] },
+  }
+}
 export const Integrations: GlobalConfig = {
   slug: 'integrations',
   label: 'Clés API & services',
@@ -23,8 +39,8 @@ export const Integrations: GlobalConfig = {
           name: 'twitch',
           description: 'Application à créer sur https://dev.twitch.tv/console/apps',
           fields: [
-            { name: 'channelLogin', label: 'Identifiant de la chaîne', type: 'text', defaultValue: 'liratsu' },
-            { name: 'clientId', label: 'Client ID', type: 'text' },
+            trimmedText({ name: 'channelLogin', label: 'Identifiant de la chaîne', defaultValue: 'liratsu' }),
+            trimmedText({ name: 'clientId', label: 'Client ID' }),
             encryptedField({ name: 'clientSecret', label: 'Client Secret' }),
             { name: 'oauthEnabled', label: 'Connexion viewers via Twitch (Espace communauté)', type: 'checkbox', defaultValue: false },
           ],
@@ -33,19 +49,17 @@ export const Integrations: GlobalConfig = {
           label: 'YouTube',
           name: 'youtube',
           fields: [
-            {
+            trimmedText({
               name: 'channelId',
               label: 'ID de chaîne (UC…)',
-              type: 'text',
               admin: { description: 'Utilisé pour le flux RSS public : aucune clé API nécessaire.' },
-            },
-            {
+            }),
+            trimmedText({
               name: 'vodChannelHandle',
               label: 'Pseudo de la chaîne des rediffs (VOD)',
-              type: 'text',
               defaultValue: 'LiratsuVOD',
               admin: { description: 'Sans le « @ ». Utilisé pour retrouver automatiquement le lien de VOD d’un ancien planning.' },
-            },
+            }),
           ],
         },
         {
@@ -58,7 +72,7 @@ export const Integrations: GlobalConfig = {
               label: 'Mode test',
               type: 'group',
               fields: [
-                { name: 'publishableKey', label: 'Clé publiable (pk_test_…)', type: 'text' },
+                trimmedText({ name: 'publishableKey', label: 'Clé publiable (pk_test_…)' }),
                 encryptedField({ name: 'secretKey', label: 'Clé secrète (sk_test_…)' }),
                 encryptedField({ name: 'webhookSecret', label: 'Secret de webhook (whsec_…)' }),
               ],
@@ -68,7 +82,7 @@ export const Integrations: GlobalConfig = {
               label: 'Mode production',
               type: 'group',
               fields: [
-                { name: 'publishableKey', label: 'Clé publiable (pk_live_…)', type: 'text' },
+                trimmedText({ name: 'publishableKey', label: 'Clé publiable (pk_live_…)' }),
                 encryptedField({ name: 'secretKey', label: 'Clé secrète (sk_live_…)' }),
                 encryptedField({ name: 'webhookSecret', label: 'Secret de webhook (whsec_…)' }),
               ],
@@ -85,9 +99,9 @@ export const Integrations: GlobalConfig = {
               label: 'Sandbox',
               type: 'group',
               fields: [
-                { name: 'clientId', label: 'Client ID', type: 'text' },
+                trimmedText({ name: 'clientId', label: 'Client ID' }),
                 encryptedField({ name: 'clientSecret', label: 'Secret' }),
-                { name: 'webhookId', label: 'Webhook ID', type: 'text' },
+                trimmedText({ name: 'webhookId', label: 'Webhook ID' }),
               ],
             },
             {
@@ -95,9 +109,9 @@ export const Integrations: GlobalConfig = {
               label: 'Production',
               type: 'group',
               fields: [
-                { name: 'clientId', label: 'Client ID', type: 'text' },
+                trimmedText({ name: 'clientId', label: 'Client ID' }),
                 encryptedField({ name: 'clientSecret', label: 'Secret' }),
-                { name: 'webhookId', label: 'Webhook ID', type: 'text' },
+                trimmedText({ name: 'webhookId', label: 'Webhook ID' }),
               ],
             },
           ],
@@ -122,14 +136,14 @@ export const Integrations: GlobalConfig = {
             {
               type: 'row',
               fields: [
-                { name: 'host', label: 'Serveur', type: 'text', admin: { width: '50%' } },
+                trimmedText({ name: 'host', label: 'Serveur', admin: { width: '50%' } }),
                 { name: 'port', label: 'Port', type: 'number', defaultValue: 587, admin: { width: '25%' } },
                 { name: 'secure', label: 'TLS direct (465)', type: 'checkbox', admin: { width: '25%' } },
               ],
             },
-            { name: 'user', label: 'Utilisateur', type: 'text' },
+            trimmedText({ name: 'user', label: 'Utilisateur' }),
             encryptedField({ name: 'password', label: 'Mot de passe' }),
-            { name: 'from', label: 'Expéditeur', type: 'text', defaultValue: 'Liratsu <boutique@liratsu.fr>' },
+            trimmedText({ name: 'from', label: 'Expéditeur', defaultValue: 'Liratsu <boutique@liratsu.fr>' }),
             { name: 'adminNotify', label: 'Email de notification interne', type: 'email' },
           ],
         },
@@ -161,8 +175,8 @@ export const Integrations: GlobalConfig = {
                 { label: 'Plausible', value: 'plausible' },
               ],
             },
-            { name: 'scriptUrl', label: 'URL du script', type: 'text' },
-            { name: 'siteId', label: 'ID du site / domaine', type: 'text' },
+            trimmedText({ name: 'scriptUrl', label: 'URL du script' }),
+            trimmedText({ name: 'siteId', label: 'ID du site / domaine' }),
           ],
         },
       ],
