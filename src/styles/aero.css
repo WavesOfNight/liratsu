@@ -82,12 +82,13 @@ body {
   font-size: 1rem;
   line-height: 1.6;
   color: var(--text);
-  /* Halos doux façon Frutiger Aero (lumière ambiante), sous les bulles/poissons animés. */
-  background:
-    radial-gradient(1000px 560px at 6% -8%, rgba(63, 169, 245, 0.3), transparent 65%),
-    radial-gradient(760px 680px at 102% 8%, rgba(46, 196, 201, 0.22), transparent 65%),
-    radial-gradient(680px 520px at 90% 100%, rgba(255, 211, 92, 0.16), transparent 60%),
-    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 38%, var(--sky-bottom) 100%) fixed;
+  /* Photo de fond Frutiger Aero (ciel/pelouse le jour, ciel étoilé la nuit) : voir public/Background. */
+  background-color: var(--sky-top);
+  background-image: url('/Background/day.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   overflow-x: hidden;
 }
 
@@ -97,11 +98,8 @@ body > main {
 }
 
 :root[data-theme='dark'] body {
-  background:
-    radial-gradient(1100px 560px at 6% -10%, rgba(63, 169, 245, 0.2), transparent 65%),
-    radial-gradient(950px 720px at 102% 6%, rgba(46, 196, 201, 0.26), transparent 65%),
-    radial-gradient(820px 600px at 50% 108%, rgba(30, 111, 217, 0.32), transparent 60%),
-    linear-gradient(180deg, var(--sky-top), var(--sky-mid) 50%, var(--sky-bottom)) fixed;
+  background-color: var(--sky-top);
+  background-image: url('/Background/night.webp');
 }
 
 h1,

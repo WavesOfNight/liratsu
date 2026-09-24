@@ -53,7 +53,6 @@ export const Theme: GlobalConfig = {
       },
       fields: [
         { name: 'bubbles', label: 'Bulles animées en fond', type: 'checkbox', defaultValue: true },
-        { name: 'fish', label: 'Poissons rouges qui traversent', type: 'checkbox', defaultValue: true },
         { name: 'soundsAvailable', label: 'Proposer les sons rétro (OFF par défaut chez le visiteur)', type: 'checkbox', defaultValue: true },
         { name: 'customCursors', label: 'Curseurs personnalisés (étoile / bulle)', type: 'checkbox', defaultValue: false },
         {

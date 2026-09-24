@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next'
 import { cookies, headers } from 'next/headers'
 import React from 'react'
 import '@/styles/aero.css'
-import { AeroGlow } from '@/components/AeroGlow'
 import { BackgroundAquarium } from '@/components/BackgroundAquarium'
 import { Analytics } from '@/components/consent/Analytics'
 import { ConsentProvider } from '@/components/consent/CookieConsent'
@@ -94,8 +93,7 @@ export default async function FrontendLayout({ children }: { children: React.Rea
                   🧪 Boutique en mode test : aucun paiement réel ne sera effectué.
                 </div>
               )}
-              <AeroGlow />
-              <BackgroundAquarium bubbles={theme.effects?.bubbles !== false} fish={theme.effects?.fish !== false} />
+              <BackgroundAquarium bubbles={theme.effects?.bubbles !== false} />
               <Header items={nav} siteName={site.siteName} member={member ? { displayName: member.displayName, avatarUrl: member.avatarUrl ?? null } : null} />
               <main id="contenu" tabIndex={-1}>
                 {children}

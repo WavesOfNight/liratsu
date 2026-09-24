@@ -1807,7 +1807,6 @@ export interface Theme {
    */
   effects?: {
     bubbles?: boolean | null;
-    fish?: boolean | null;
     soundsAvailable?: boolean | null;
     customCursors?: boolean | null;
     defaultMode?: ('auto' | 'light' | 'dark') | null;
@@ -2574,7 +2573,6 @@ export interface ThemeSelect<T extends boolean = true> {
     | T
     | {
         bubbles?: T;
-        fish?: T;
         soundsAvailable?: T;
         customCursors?: T;
         defaultMode?: T;
