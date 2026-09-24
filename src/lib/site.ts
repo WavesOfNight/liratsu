@@ -2,6 +2,7 @@
 import { cache } from 'react'
 import type { Media, SiteSetting } from '@/payload-types'
 import type { SectionKey } from '@/globals/SiteSettings'
+import { cached } from './cache'
 import { getPayloadClient } from './payload'
 import { getIntegrations } from './settings'
 
@@ -33,6 +34,22 @@ export function sectionState(site: SiteSetting, key: SectionKey): SectionState {
 export async function getSection(key: SectionKey): Promise<SectionState> {
   const { site } = await getSiteData()
   return sectionState(site, key)
+}
+
+/**
+ * État du mode maintenance, pour le proxy (voir src/proxy.ts). Volontairement séparé de
+ * getSiteData() (mémoïsé par React, donc lié au cycle de rendu) : le proxy tourne en dehors
+ * de ce cycle et a besoin d'un cache à durée de vie propre, léger et rafraîchi périodiquement.
+ */
+export async function getMaintenanceState(): Promise<{ enabled: boolean; message: string }> {
+  return cached('maintenance-state', 15_000, async () => {
+    const payload = await getPayloadClient()
+    const site = await payload.findGlobal({ slug: 'site-settings', depth: 0 })
+    return {
+      enabled: Boolean(site.maintenanceMode),
+      message: site.maintenanceMessage || 'Le site est en maintenance ✦ Repasse un peu plus tard !',
+    }
+  })
 }
 
 export const SECTION_PATHS: Record<SectionKey, string> = {

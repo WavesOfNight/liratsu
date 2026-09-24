@@ -1741,6 +1741,8 @@ export interface SiteSetting {
   footerText?: string | null;
   devCredit?: string | null;
   publisherCredit?: string | null;
+  maintenanceMode?: boolean | null;
+  maintenanceMessage?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2462,6 +2464,8 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   footerText?: T;
   devCredit?: T;
   publisherCredit?: T;
+  maintenanceMode?: T;
+  maintenanceMessage?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

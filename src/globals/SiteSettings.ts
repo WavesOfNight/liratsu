@@ -102,6 +102,20 @@ export const SiteSettings: GlobalConfig = {
             { name: 'publisherCredit', label: 'Mention éditeur', type: 'text', defaultValue: 'Site édité par Reads Records' },
           ],
         },
+        {
+          label: 'Maintenance',
+          description: 'Affiche une page « site en travaux » à la place du site public. Le tableau de bord admin et la connexion restent toujours accessibles.',
+          fields: [
+            { name: 'maintenanceMode', label: 'Activer le mode maintenance', type: 'checkbox', defaultValue: false },
+            {
+              name: 'maintenanceMessage',
+              label: 'Message affiché',
+              type: 'textarea',
+              defaultValue: 'Lionel travaille actuellement sur le site ✦ Repasse un peu plus tard !',
+              admin: { condition: (data) => Boolean(data?.maintenanceMode) },
+            },
+          ],
+        },
       ],
     },
   ],
