@@ -23,6 +23,30 @@ function truncate(s: string, max: number): string {
   return s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s
 }
 
+/** Découpe un texte en `maxLines` lignes d'au plus `maxChars` caractères (le texte complet
+ * tient s'il le peut ; sinon la dernière ligne est coupée avec « … »). */
+function wrapLines(s: string, maxChars: number, maxLines: number): string[] {
+  const words = s.split(/\s+/).filter(Boolean)
+  const lines: string[] = []
+  let current = ''
+  let i = 0
+  while (i < words.length && lines.length < maxLines) {
+    const candidate = current ? `${current} ${words[i]}` : words[i]
+    if (candidate.length > maxChars && current) {
+      lines.push(current)
+      current = ''
+      continue
+    }
+    current = candidate
+    i++
+  }
+  if (current) lines.push(current)
+  if (i < words.length && lines.length) {
+    lines[lines.length - 1] = truncate(`${lines[lines.length - 1]} ${words.slice(i).join(' ')}`, maxChars)
+  }
+  return lines
+}
+
 async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   try {
     const r = await fetch(url, { signal: AbortSignal.timeout(6000) })
@@ -63,12 +87,22 @@ export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Prom
   const winY = margin
   const winW = W - margin * 2
 
+  // Masque à coins arrondis (même rayon que la bordure blanche dessinée par-dessus) : sans ça,
+  // la jaquette carrée dépasse légèrement des coins arrondis de la carte.
+  const cardRadius = 18
+  const roundedMask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${TILE}" height="${TILE}"><rect width="${TILE}" height="${TILE}" rx="${cardRadius}" fill="#fff"/></svg>`)
+
   const boxArts = await Promise.all(
     list.map(async (it) => {
       const buf = it.boxArtUrl ? await fetchImageBuffer(boxArtHiRes(it.boxArtUrl)) : null
       if (!buf) return null
       try {
-        return await sharp(buf).resize(TILE, TILE, { fit: 'cover', position: 'attention', kernel: 'lanczos3' }).sharpen({ sigma: 0.5 }).png().toBuffer()
+        return await sharp(buf)
+          .resize(TILE, TILE, { fit: 'cover', position: 'attention', kernel: 'lanczos3' })
+          .sharpen({ sigma: 0.5 })
+          .composite([{ input: roundedMask, blend: 'dest-in' }])
+          .png()
+          .toBuffer()
       } catch {
         return null
       }
@@ -156,15 +190,19 @@ export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Prom
     ${list
       .map((it, i) => {
         const p = positions[i]
-        const barH = 92
+        const barH = 118
         const opacity = it.cancelled ? 0.55 : 1
+        const titleLines = wrapLines(it.cancelled ? `${it.title} (annulé)` : it.title, 30, 2)
+        const titleSvg = titleLines
+          .map((line, li) => `<text x="${p.x + 16}" y="${p.y + TILE - barH + 60 + li * 23}" font-family="Arial, sans-serif" font-size="17" fill="#ffffff">${escXml(line)}</text>`)
+          .join('')
         return `<g opacity="${opacity}">
-          <rect x="${p.x}" y="${p.y}" width="${TILE}" height="${TILE}" rx="18" fill="none" stroke="#ffffff" stroke-width="5"/>
-          ${boxArts[i] ? '' : `<rect x="${p.x}" y="${p.y}" width="${TILE}" height="${TILE}" rx="18" fill="#1e6fd9"/><text x="${p.x + TILE / 2}" y="${p.y + TILE / 2 + 30}" text-anchor="middle" font-size="88">${escXml(it.icon)}</text>`}
+          <rect x="${p.x}" y="${p.y}" width="${TILE}" height="${TILE}" rx="${cardRadius}" fill="none" stroke="#ffffff" stroke-width="5"/>
+          ${boxArts[i] ? '' : `<rect x="${p.x}" y="${p.y}" width="${TILE}" height="${TILE}" rx="${cardRadius}" fill="#1e6fd9"/><text x="${p.x + TILE / 2}" y="${p.y + TILE / 2 + 30}" text-anchor="middle" font-size="88">${escXml(it.icon)}</text>`}
           <rect x="${p.x}" y="${p.y + TILE - barH}" width="${TILE}" height="${barH}" rx="0" fill="rgba(11,26,58,0.85)"/>
-          <text x="${p.x + 16}" y="${p.y + TILE - barH + 30}" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#ffffff">${escXml(truncate(it.day, 22))}</text>
-          <text x="${p.x + TILE - 16}" y="${p.y + TILE - barH + 30}" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#eaf5ff">${escXml(it.time)}</text>
-          <text x="${p.x + 16}" y="${p.y + TILE - 16}" font-family="Arial, sans-serif" font-size="17" fill="#ffffff">${escXml(truncate(it.cancelled ? `${it.title} (annulé)` : it.title, 28))}</text>
+          <text x="${p.x + 16}" y="${p.y + TILE - barH + 28}" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#ffffff">${escXml(truncate(it.day, 24))}</text>
+          <text x="${p.x + TILE - 16}" y="${p.y + TILE - barH + 28}" text-anchor="end" font-family="Arial, sans-serif" font-size="16" fill="#eaf5ff">${escXml(it.time)}</text>
+          ${titleSvg}
         </g>`
       })
       .join('')}

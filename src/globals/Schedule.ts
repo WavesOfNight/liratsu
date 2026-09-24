@@ -1,7 +1,7 @@
 import type { GlobalAfterChangeHook, GlobalConfig } from 'payload'
 import { anyone, isEditor } from '@/access/roles'
 import { revalidateAll } from '@/hooks/revalidate'
-import { extractScheduleItems, scheduleChanged } from '@/lib/schedule'
+import { displayTitle, extractScheduleItems, scheduleChanged } from '@/lib/schedule'
 import { getIntegrations } from '@/lib/settings'
 import { findVodForDate } from '@/lib/youtube'
 
@@ -27,7 +27,7 @@ const onScheduleChange: GlobalAfterChangeHook = async ({ doc, previousDoc, req }
           collection: 'schedule-archive',
           data: {
             date: item.date,
-            title: item.title,
+            title: displayTitle(item),
             game: item.game || undefined,
             boxArtUrl: item.boxArtUrl || undefined,
             kind: (item.kind || 'game') as 'game' | 'art' | 'music' | 'chat',
@@ -85,7 +85,12 @@ export const Schedule: GlobalConfig = {
             },
           ],
         },
-        { name: 'title', label: 'Programme (affiché sur la carte)', type: 'text', required: true, admin: { placeholder: 'Ex. Soirée dessin chill' } },
+        {
+          name: 'title',
+          label: 'Programme (affiché sur la carte)',
+          type: 'text',
+          admin: { placeholder: 'Ex. Soirée dessin chill', description: 'Laisse vide pour afficher directement le nom de la catégorie Twitch ci-dessous.' },
+        },
         {
           type: 'row',
           fields: [

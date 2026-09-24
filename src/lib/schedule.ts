@@ -13,10 +13,15 @@ export type ScheduleItem = {
   id?: string | null
   date: string
   time: string
-  title: string
+  title?: string | null
   kind?: string | null
   game?: string | null
   boxArtUrl?: string | null
+}
+
+/** Le texte à afficher : le Programme s'il est renseigné, sinon le nom de la catégorie Twitch. */
+export function displayTitle(item: Pick<ScheduleItem, 'title' | 'game'>): string {
+  return item.title?.trim() || item.game?.trim() || ''
 }
 
 /** Extrait les créneaux d'un document du global « schedule » (ou de sa version précédente). */
@@ -47,16 +52,17 @@ export function upcoming<T extends { date: string }>(items: T[], from = new Date
   return items.filter((i) => i.date.slice(0, 10) >= todayIso)
 }
 
-/** Libellé jour + date en français, ex. « vendredi 26 sept. » (même format que le planning Twitch auto). */
+/** Libellé jour + date en français, ex. « Jeudi 24 Septembre ». */
 export function formatScheduleDate(dateIso: string): string {
-  return new Date(dateIso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'Europe/Paris' })
+  const raw = new Date(dateIso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' })
+  return raw.replace(/(^|\s)\p{L}/gu, (c) => c.toUpperCase())
 }
 
 export function toDiscordItems(items: ScheduleItem[]): ScheduleItemForDiscord[] {
   return sortedByDate(items).map((i) => ({
     day: formatScheduleDate(i.date),
     time: i.time,
-    title: i.title,
+    title: displayTitle(i),
     icon: KIND_ICON[i.kind ?? 'game'] ?? '🎮',
     boxArtUrl: i.boxArtUrl ? boxArtHiRes(i.boxArtUrl) : i.boxArtUrl,
   }))

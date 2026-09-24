@@ -9,7 +9,7 @@ import type { BiographyPage, HomePage, Media, SiteSetting } from '@/payload-type
 import { getClips, getLiveStatus, getSchedule } from '@/lib/twitch'
 import { getLatestVideos } from '@/lib/youtube'
 import { absoluteUrl, mediaUrl } from '@/lib/site'
-import { formatScheduleDate, getUpcomingScheduleItems } from '@/lib/schedule'
+import { displayTitle, formatScheduleDate, getUpcomingScheduleItems } from '@/lib/schedule'
 import { AeroWindow } from '../AeroWindow'
 import { LogoAero } from '../LogoAero'
 import { RichText } from '../RichText'
@@ -95,7 +95,7 @@ async function renderBlock(block: Block, site: SiteSetting, isFirst: boolean): P
           ) : manual.length ? (
             <ul className={styles.scheduleGrid}>
               {manual.map((s) => (
-                <ScheduleCard key={s.id ?? `${s.date}${s.time}`} boxArtUrl={s.boxArtUrl} icon={KIND_ICON[s.kind ?? 'game']} day={formatScheduleDate(s.date)} time={s.time} title={s.title} />
+                <ScheduleCard key={s.id ?? `${s.date}${s.time}`} boxArtUrl={s.boxArtUrl} icon={KIND_ICON[s.kind ?? 'game']} day={formatScheduleDate(s.date)} time={s.time} title={displayTitle(s)} />
               ))}
             </ul>
           ) : (

@@ -2098,7 +2098,10 @@ export interface Schedule {
         date: string;
         time: string;
         kind?: ('game' | 'art' | 'music' | 'chat') | null;
-        title: string;
+        /**
+         * Laisse vide pour afficher directement le nom de la catégorie Twitch ci-dessous.
+         */
+        title?: string | null;
         /**
          * Cherche n’importe quelle catégorie Twitch : un jeu, mais aussi « Just Chatting », « Art », « Music »… Laisse vide pour garder une simple icône.
          */
