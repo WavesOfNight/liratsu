@@ -1816,6 +1816,9 @@ export interface HomePage {
                   time: string;
                   title: string;
                   kind?: ('game' | 'art' | 'music' | 'chat') | null;
+                  /**
+                   * Cherche n’importe quelle catégorie Twitch : un jeu, mais aussi « Just Chatting », « Art », « Music »… Laisse vide pour garder une simple icône.
+                   */
                   game?: string | null;
                   boxArtUrl?: string | null;
                   id?: string | null;

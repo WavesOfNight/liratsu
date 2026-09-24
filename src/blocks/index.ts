@@ -69,10 +69,10 @@ export const ScheduleBlock: Block = {
               options: ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((d) => ({ label: d, value: d })),
             },
             { name: 'time', label: 'Heure', type: 'text', required: true, admin: { placeholder: '20h30' } },
-            { name: 'title', label: 'Programme', type: 'text', required: true },
+            { name: 'title', label: 'Programme (affiché sur la carte)', type: 'text', required: true, admin: { placeholder: 'Ex. Soirée dessin chill' } },
             {
               name: 'kind',
-              label: 'Type',
+              label: 'Type (choisit l’icône si pas de miniature)',
               type: 'select',
               defaultValue: 'game',
               options: [
@@ -86,13 +86,17 @@ export const ScheduleBlock: Block = {
         },
         {
           type: 'row',
-          admin: { condition: (_, siblingData) => siblingData?.kind === 'game' },
           fields: [
             {
               name: 'game',
-              label: 'Jeu (recherche la miniature officielle)',
+              label: 'Catégorie Twitch (pour la miniature officielle)',
               type: 'text',
-              admin: { width: '60%', components: { Field: '@/components/admin/GamePicker#GamePicker' } },
+              admin: {
+                width: '60%',
+                placeholder: 'Ex. The Binding of Isaac, Just Chatting, Art…',
+                description: 'Cherche n’importe quelle catégorie Twitch : un jeu, mais aussi « Just Chatting », « Art », « Music »… Laisse vide pour garder une simple icône.',
+                components: { Field: '@/components/admin/GamePicker#GamePicker' },
+              },
             },
             { name: 'boxArtUrl', label: 'Miniature (auto)', type: 'text', admin: { width: '40%', readOnly: true } },
           ],

@@ -5,7 +5,7 @@
  * automatiquement le champ voisin `boxArtUrl` au clic sur un résultat.
  */
 import React, { useEffect, useRef, useState } from 'react'
-import { FieldLabel, useForm, useField } from '@payloadcms/ui'
+import { FieldDescription, FieldLabel, useForm, useField } from '@payloadcms/ui'
 import type { TextFieldClientComponent } from 'payload'
 
 type Result = { id: string; name: string; boxArtUrl: string }
@@ -14,6 +14,8 @@ export const GamePicker: TextFieldClientComponent = ({ field, path }) => {
   const { value, setValue } = useField<string>({ path })
   const { dispatchFields } = useForm()
   const label = typeof field.label === 'string' ? field.label : field.name
+  const placeholder = (typeof field.admin?.placeholder === 'string' && field.admin.placeholder) || 'Ex. The Binding of Isaac, Just Chatting…'
+  const description = typeof field.admin?.description === 'string' ? field.admin.description : undefined
   const [open, setOpen] = useState(false)
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(false)
@@ -57,9 +59,10 @@ export const GamePicker: TextFieldClientComponent = ({ field, path }) => {
         }}
         onFocus={() => results.length > 0 && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
-        placeholder="Ex. The Binding of Isaac"
+        placeholder={placeholder}
         autoComplete="off"
       />
+      {description && <FieldDescription path={path} description={description} />}
       {loading && <span style={{ position: 'absolute', right: 8, top: 34, fontSize: 12, opacity: 0.7 }}>…</span>}
       {open && results.length > 0 && (
         <ul

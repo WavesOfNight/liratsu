@@ -30,14 +30,35 @@ async function fetchImageBuffer(url: string): Promise<Buffer | null> {
   }
 }
 
-/** Rend l'image PNG du planning (carte carrée par jour de stream). */
+/** Icône étoile à 4 branches (même silhouette que le sticker du site), centrée sur (cx, cy). */
+function starPath(cx: number, cy: number, r: number): string {
+  const r2 = r * 0.38
+  const pts = [
+    [cx, cy - r],
+    [cx + r2, cy - r2],
+    [cx + r, cy],
+    [cx + r2, cy + r2],
+    [cx, cy + r],
+    [cx - r2, cy + r2],
+    [cx - r, cy],
+    [cx - r2, cy - r2],
+  ]
+  return `M ${pts.map((p) => p.join(',')).join(' L ')} Z`
+}
+
+/** Rend l'image PNG du planning : une fenêtre « Aero » (même look que le site), avec les cartes des streams. */
 export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Promise<Buffer> {
   const list = items.slice(0, 8)
   const cols = Math.min(COLS_MAX, Math.max(1, list.length))
   const rows = Math.ceil(list.length / cols) || 1
-  const headerH = 74
-  const W = PAD * 2 + cols * TILE + (cols - 1) * GAP
-  const H = headerH + PAD + rows * TILE + (rows - 1) * GAP + PAD
+  const barH = 48
+  const margin = 24
+  const winPad = PAD
+  const W = margin * 2 + winPad * 2 + cols * TILE + (cols - 1) * GAP
+  const H = margin * 2 + barH + winPad * 2 + rows * TILE + (rows - 1) * GAP
+  const winX = margin
+  const winY = margin
+  const winW = W - margin * 2
 
   const boxArts = await Promise.all(
     list.map(async (it) => {
@@ -51,7 +72,29 @@ export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Prom
     }),
   )
 
-  const positions = list.map((_, i) => ({ x: PAD + (i % cols) * (TILE + GAP), y: headerH + PAD + Math.floor(i / cols) * (TILE + GAP) }))
+  const positions = list.map((_, i) => ({
+    x: winX + winPad + (i % cols) * (TILE + GAP),
+    y: winY + barH + winPad + Math.floor(i / cols) * (TILE + GAP),
+  }))
+
+  // Barre de titre façon fenêtre Aero du site : dégradé bleu clair, étoile, titre, 3 boutons
+  // décoratifs (réduire / agrandir / fermer, mêmes couleurs que .aero-window__ctrl en CSS).
+  const ctrlY = winY + (barH - 22) / 2
+  const ctrlBtn = (x: number, kind: 'min' | 'max' | 'close') => {
+    const w = kind === 'close' ? 30 : 22
+    const fill = kind === 'close' ? 'url(#ctrlClose)' : 'url(#ctrlNeutral)'
+    const stroke = kind === 'close' ? 'rgba(140,20,50,.45)' : 'rgba(15,42,92,.35)'
+    const icon =
+      kind === 'min'
+        ? `<rect x="${x + 6}" y="${ctrlY + 14}" width="10" height="2" fill="#0f2a5c"/>`
+        : kind === 'max'
+          ? `<rect x="${x + 6}" y="${ctrlY + 6}" width="10" height="10" fill="none" stroke="#0f2a5c" stroke-width="1.6"/>`
+          : `<path d="M ${x + 8} ${ctrlY + 7} L ${x + w - 8} ${ctrlY + 15} M ${x + w - 8} ${ctrlY + 7} L ${x + 8} ${ctrlY + 15}" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>`
+    return `<rect x="${x}" y="${ctrlY}" width="${w}" height="22" rx="6" fill="${fill}" stroke="${stroke}"/>${icon}`
+  }
+  const closeX = winX + winW - 12 - 30
+  const maxX = closeX - 8 - 22
+  const minX = maxX - 8 - 22
 
   const backgroundSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
     <defs>
@@ -59,13 +102,42 @@ export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Prom
         <stop offset="0" stop-color="#8fd3ff"/>
         <stop offset="1" stop-color="#eaf5ff"/>
       </linearGradient>
+      <linearGradient id="titlebar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#e6f6ff"/>
+        <stop offset="0.48" stop-color="#b5e2ff"/>
+        <stop offset="0.5" stop-color="#86cdfb"/>
+        <stop offset="1" stop-color="#a9dcff"/>
+      </linearGradient>
+      <linearGradient id="ctrlNeutral" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffffff"/>
+        <stop offset="0.48" stop-color="#dff2ff"/>
+        <stop offset="0.5" stop-color="#b9e1fb"/>
+        <stop offset="1" stop-color="#d6efff"/>
+      </linearGradient>
+      <linearGradient id="ctrlClose" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffc2cf"/>
+        <stop offset="0.48" stop-color="#ff8aa5"/>
+        <stop offset="0.5" stop-color="#f0577c"/>
+        <stop offset="1" stop-color="#ff8fab"/>
+      </linearGradient>
       <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" stop-color="#bfe8ff"/>
         <stop offset="1" stop-color="#3fa9f5"/>
       </linearGradient>
+      <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0b1a3a" flood-opacity="0.25"/>
+      </filter>
     </defs>
     <rect width="${W}" height="${H}" fill="url(#sky)"/>
-    <text x="${W / 2}" y="46" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#1e6fd9" stroke="#ffffff" stroke-width="2" paint-order="stroke">✦ Planning de la semaine ✦</text>
+    <g filter="url(#softShadow)">
+      <rect x="${winX}" y="${winY}" width="${winW}" height="${H - margin * 2}" rx="18" fill="#ffffff"/>
+      <path d="M ${winX} ${winY + 18} a 18 18 0 0 1 18 -18 h ${winW - 36} a 18 18 0 0 1 18 18 v ${barH - 18} h -${winW} Z" fill="url(#titlebar)"/>
+      <path d="${starPath(winX + 26, winY + barH / 2, 11)}" fill="#ffd35c" stroke="#ffffff" stroke-width="1.5"/>
+      <text x="${winX + 46}" y="${winY + barH / 2 + 6}" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="#0f2a5c">Planning de la semaine</text>
+      ${ctrlBtn(minX, 'min')}
+      ${ctrlBtn(maxX, 'max')}
+      ${ctrlBtn(closeX, 'close')}
+    </g>
     ${positions.map((p) => `<rect x="${p.x - 3}" y="${p.y - 3}" width="${TILE + 6}" height="${TILE + 6}" rx="18" fill="url(#card)"/>`).join('')}
   </svg>`
 
