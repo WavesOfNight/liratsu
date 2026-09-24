@@ -4,6 +4,7 @@
  * mise en forme pour l'affichage / l'image Discord.
  */
 import { getPayloadClient } from './payload'
+import { boxArtHiRes } from './twitch'
 import type { ScheduleItemForDiscord } from './discord'
 
 export const KIND_ICON: Record<string, string> = { game: '🎮', art: '🎨', music: '🎵', chat: '💬' }
@@ -52,12 +53,22 @@ export function formatScheduleDate(dateIso: string): string {
 }
 
 export function toDiscordItems(items: ScheduleItem[]): ScheduleItemForDiscord[] {
-  return sortedByDate(items).map((i) => ({ day: formatScheduleDate(i.date), time: i.time, title: i.title, icon: KIND_ICON[i.kind ?? 'game'] ?? '🎮', boxArtUrl: i.boxArtUrl }))
+  return sortedByDate(items).map((i) => ({
+    day: formatScheduleDate(i.date),
+    time: i.time,
+    title: i.title,
+    icon: KIND_ICON[i.kind ?? 'game'] ?? '🎮',
+    boxArtUrl: i.boxArtUrl ? boxArtHiRes(i.boxArtUrl) : i.boxArtUrl,
+  }))
 }
 
-/** Créneaux à venir, triés, prêts pour l'affichage public. */
+/**
+ * Créneaux à venir, triés, prêts pour l'affichage public. La jaquette est toujours remise en
+ * haute résolution ici (voir boxArtHiRes) : ça rattrape aussi les créneaux enregistrés avant
+ * ce correctif, sans besoin de re-choisir la catégorie dans l'admin.
+ */
 export async function getUpcomingScheduleItems(): Promise<ScheduleItem[]> {
   const payload = await getPayloadClient()
   const doc = await payload.findGlobal({ slug: 'schedule', depth: 0 })
-  return sortedByDate(upcoming(extractScheduleItems(doc)))
+  return sortedByDate(upcoming(extractScheduleItems(doc))).map((i) => ({ ...i, boxArtUrl: i.boxArtUrl ? boxArtHiRes(i.boxArtUrl) : i.boxArtUrl }))
 }

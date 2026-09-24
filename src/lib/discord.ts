@@ -5,6 +5,7 @@
  */
 import sharp from 'sharp'
 import { getIntegrations } from './settings'
+import { boxArtHiRes } from './twitch'
 
 export type ScheduleItemForDiscord = { day: string; time: string; title: string; icon: string; boxArtUrl?: string | null; cancelled?: boolean }
 
@@ -64,7 +65,7 @@ export async function renderScheduleImage(items: ScheduleItemForDiscord[]): Prom
 
   const boxArts = await Promise.all(
     list.map(async (it) => {
-      const buf = it.boxArtUrl ? await fetchImageBuffer(it.boxArtUrl) : null
+      const buf = it.boxArtUrl ? await fetchImageBuffer(boxArtHiRes(it.boxArtUrl)) : null
       if (!buf) return null
       try {
         return await sharp(buf).resize(TILE, TILE, { fit: 'cover', position: 'attention', kernel: 'lanczos3' }).sharpen({ sigma: 0.5 }).png().toBuffer()

@@ -5,6 +5,7 @@ import React from 'react'
 import { AeroWindow } from '@/components/AeroWindow'
 import { KIND_ICON } from '@/lib/schedule'
 import { getSection, getSiteData } from '@/lib/site'
+import { boxArtHiRes } from '@/lib/twitch'
 import styles from './planning.module.css'
 
 export const metadata: Metadata = {
@@ -32,8 +33,7 @@ export default async function PastSchedulePage() {
               return (
                 <li key={it.id} className={styles.card}>
                   {it.boxArtUrl ? (
-                     
-                    <img src={it.boxArtUrl} alt="" className={styles.art} />
+                    <img src={boxArtHiRes(it.boxArtUrl)} alt="" className={styles.art} />
                   ) : (
                     <div className={styles.fallback} aria-hidden="true">
                       <span>{KIND_ICON[it.kind ?? 'game'] ?? '🎮'}</span>

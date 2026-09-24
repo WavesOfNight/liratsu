@@ -101,6 +101,16 @@ export async function getSchedule(): Promise<ScheduleItem[] | null> {
 export type GameResult = { id: string; name: string; boxArtUrl: string }
 
 /**
+ * Force n'importe quelle URL de jaquette Twitch (déjà enregistrée, à n'importe quelle
+ * taille — un ancien créneau du planning peut dater d'avant ce correctif) à la haute
+ * résolution au moment de l'affichage. Comme ça, pas besoin de retrouver et re-choisir
+ * chaque catégorie dans l'admin : tout ce qui est déjà enregistré profite du correctif.
+ */
+export function boxArtHiRes(url: string): string {
+  return url.replace(/-\d+x\d+\.(jpg|jpeg|png)$/i, '-1052x1072.$1')
+}
+
+/**
  * Recherche un jeu par nom (nom officiel + jaquette officielle) via l'API Twitch — les
  * mêmes identifiants (Client ID/Secret) que le reste de l'intégration Twitch, aucune clé
  * supplémentaire à saisir. Utilisé pour illustrer joliment le planning des streams.
