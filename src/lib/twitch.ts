@@ -112,10 +112,11 @@ export async function searchGameBoxArt(query: string): Promise<GameResult[]> {
   if (!twitch.clientId || !twitch.clientSecret) return []
   return cached(`twitch:game-search:${q.toLowerCase()}`, 6 * 3600_000, async () => {
     const d = await helix<{ data: { id: string; name: string; box_art_url: string }[] }>(`/search/categories?query=${encodeURIComponent(q)}&first=8`)
-    // Demande la jaquette en haute résolution (le CDN Twitch accepte bien plus grand que la
-    // taille par défaut de leur sélecteur, 52x72) : évite d'agrandir une petite image côté
-    // serveur (flou) quand on la réaffiche en grand sur le site ou dans l'image Discord.
-    return (d?.data ?? []).map((g) => ({ id: g.id, name: g.name, boxArtUrl: g.box_art_url.replace('{width}', '564').replace('{height}', '752') }))
+    // Demande la jaquette en (très) haute résolution (le CDN Twitch accepte bien plus grand
+    // que la taille par défaut de leur sélecteur, 52x72 — vérifié : 1052x1072 sert une vraie
+    // image, pas un agrandissement) : évite d'agrandir une petite image côté serveur (flou)
+    // quand on la réaffiche en grand sur le site ou dans l'image Discord.
+    return (d?.data ?? []).map((g) => ({ id: g.id, name: g.name, boxArtUrl: g.box_art_url.replace('{width}', '1052').replace('{height}', '1072') }))
   })
 }
 
