@@ -20,7 +20,7 @@ export type ResolvedIntegrations = {
   paypal: { clientId: string; clientSecret: string; webhookId: string; apiBase: string }
   gelato: { apiKey: string; webhookToken: string }
   smtp: { host: string; port: number; secure: boolean; user: string; password: string; from: string; adminNotify: string }
-  discord: { scheduleWebhookUrl: string }
+  discord: { scheduleWebhookUrl: string; clientId: string; clientSecret: string }
   analytics: { provider: 'none' | 'umami' | 'plausible'; scriptUrl: string; siteId: string }
   testMode: boolean
 }
@@ -85,6 +85,8 @@ export async function getIntegrations(): Promise<ResolvedIntegrations> {
     },
     discord: {
       scheduleWebhookUrl: pick(s(r.discord, 'scheduleWebhookUrl'), env.DISCORD_SCHEDULE_WEBHOOK_URL),
+      clientId: pick(s(r.discord, 'clientId'), env.DISCORD_CLIENT_ID),
+      clientSecret: pick(s(r.discord, 'clientSecret'), env.DISCORD_CLIENT_SECRET),
     },
     analytics: {
       provider: (s(r.analytics, 'provider') || 'none') as ResolvedIntegrations['analytics']['provider'],

@@ -25,8 +25,8 @@ export async function GET(req: Request) {
   let member = existing.docs[0]
   if (member?.banned) return back('?login=refuse')
   member = member
-    ? await payload.update({ collection: 'members', id: member.id, data: { displayName: user.displayName, avatarUrl: user.avatar } })
-    : await payload.create({ collection: 'members', data: { twitchId: user.id, displayName: user.displayName, avatarUrl: user.avatar } })
+    ? await payload.update({ collection: 'members', id: member.id, data: { displayName: user.displayName, avatarUrl: user.avatar, email: user.email ?? undefined } })
+    : await payload.create({ collection: 'members', data: { twitchId: user.id, displayName: user.displayName, avatarUrl: user.avatar, email: user.email ?? undefined } })
 
   const res = back('?login=ok')
   res.headers.append('Set-Cookie', memberCookie(Number(member.id)))

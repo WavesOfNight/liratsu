@@ -80,7 +80,7 @@ async function upsertCustomer(payload: Payload, email: string, name: string, pho
 
 export async function preparePendingOrder(
   payload: Payload,
-  input: { cart: CartInputLine[]; email: string; address: Address; couponCode?: string; provider: 'stripe' | 'paypal'; testMode: boolean },
+  input: { cart: CartInputLine[]; email: string; address: Address; couponCode?: string; provider: 'stripe' | 'paypal'; testMode: boolean; memberId?: number | null },
 ): Promise<{ order: Order; quote: Quote }> {
   const email = input.email.trim().toLowerCase()
   const q = await quote(payload, input.cart, input.address.country, input.couponCode, email)
@@ -94,6 +94,7 @@ export async function preparePendingOrder(
       testMode: input.testMode,
       email,
       customer,
+      member: input.memberId || undefined,
       provider: input.provider,
       items: q.lines.map((l, i) => ({
         title: l.title,
@@ -184,7 +185,7 @@ export async function markOrderPaid(payload: Payload, orderId: string | number, 
   })
 
   // Effets de bord (chacun protégé : un échec n'annule pas le paiement).
-  await Promise.allSettled([decrementStock(payload, paid), countCoupon(payload, paid), updateCustomerStats(payload, paid)])
+  await Promise.allSettled([decrementStock(payload, paid), countCoupon(payload, paid), updateCustomerStats(payload, paid), saveMemberAddress(payload, paid)])
 
   const { sendOrderConfirmation } = await import('./emails')
   await sendOrderConfirmation(payload, paid).catch((err) => payload.logger.error({ err }, 'email confirmation'))
@@ -215,6 +216,13 @@ async function countCoupon(payload: Payload, order: Order) {
     id,
     data: { usageCount: (c.usageCount ?? 0) + 1, revenue: Math.round(((c.revenue ?? 0) + (order.total ?? 0)) * 100) / 100 },
   })
+}
+
+/** Enregistre l'adresse utilisée sur le profil du membre connecté, pour préremplir la prochaine commande. */
+async function saveMemberAddress(payload: Payload, order: Order) {
+  if (!order.member) return
+  const id = typeof order.member === 'object' ? order.member.id : order.member
+  await payload.update({ collection: 'members', id, data: { email: order.email, savedAddress: order.shippingAddress ?? undefined }, overrideAccess: true })
 }
 
 async function updateCustomerStats(payload: Payload, order: Order) {

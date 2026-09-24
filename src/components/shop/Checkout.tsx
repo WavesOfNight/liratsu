@@ -17,6 +17,17 @@ type Quote = {
   couponError: string | null
 }
 type Config = { testMode: boolean; stripe: boolean; paypalClientId: string | null; notice: string | null }
+type SavedAddress = {
+  firstName?: string | null
+  lastName?: string | null
+  line1?: string | null
+  line2?: string | null
+  postalCode?: string | null
+  city?: string | null
+  country?: string | null
+  phone?: string | null
+} | null
+export type CheckoutMember = { displayName: string; avatarUrl: string | null; email: string | null; savedAddress: SavedAddress } | null
 
 const COUNTRIES: [string, string][] = [
   ['FR', 'France'],
@@ -40,10 +51,10 @@ declare global {
   }
 }
 
-export function Checkout({ hasCustomProducts }: { hasCustomProducts?: boolean }) {
+export function Checkout({ hasCustomProducts, member = null }: { hasCustomProducts?: boolean; member?: CheckoutMember }) {
   const cart = useCart()
   const [config, setConfig] = useState<Config | null>(null)
-  const [country, setCountry] = useState('FR')
+  const [country, setCountry] = useState(member?.savedAddress?.country || 'FR')
   const [couponInput, setCouponInput] = useState('')
   const [coupon, setCoupon] = useState('')
   const [quote, setQuote] = useState<Quote | null>(null)
@@ -240,37 +251,43 @@ export function Checkout({ hasCustomProducts }: { hasCustomProducts?: boolean })
 
       <section aria-labelledby="ship-title">
         <h2 id="ship-title">Livraison & paiement</h2>
+        {member && (
+          <p className={styles.memberNotice}>
+            {member.avatarUrl && <img src={`/_next/image?url=${encodeURIComponent(member.avatarUrl)}&w=64&q=75`} alt="" width={24} height={24} />}
+            Connecté·e en tant que <strong>{member.displayName}</strong> — tes infos ci-dessous sont préremplies, modifiables si besoin.
+          </p>
+        )}
         <form ref={formRef} className="stack" style={{ gap: 12 }} onSubmit={(e) => e.preventDefault()}>
           <div className="field">
             <label htmlFor="email">Email (confirmation & suivi)</label>
-            <input id="email" name="email" type="email" required autoComplete="email" />
+            <input id="email" name="email" type="email" required autoComplete="email" defaultValue={member?.email ?? undefined} />
           </div>
           <div className="grid-2" style={{ gap: 12 }}>
             <div className="field">
               <label htmlFor="firstName">Prénom</label>
-              <input id="firstName" name="firstName" required autoComplete="given-name" />
+              <input id="firstName" name="firstName" required autoComplete="given-name" defaultValue={member?.savedAddress?.firstName ?? undefined} />
             </div>
             <div className="field">
               <label htmlFor="lastName">Nom</label>
-              <input id="lastName" name="lastName" required autoComplete="family-name" />
+              <input id="lastName" name="lastName" required autoComplete="family-name" defaultValue={member?.savedAddress?.lastName ?? undefined} />
             </div>
           </div>
           <div className="field">
             <label htmlFor="line1">Adresse</label>
-            <input id="line1" name="line1" required autoComplete="address-line1" />
+            <input id="line1" name="line1" required autoComplete="address-line1" defaultValue={member?.savedAddress?.line1 ?? undefined} />
           </div>
           <div className="field">
             <label htmlFor="line2">Complément (optionnel)</label>
-            <input id="line2" name="line2" autoComplete="address-line2" />
+            <input id="line2" name="line2" autoComplete="address-line2" defaultValue={member?.savedAddress?.line2 ?? undefined} />
           </div>
           <div className="grid-2" style={{ gap: 12 }}>
             <div className="field">
               <label htmlFor="postalCode">Code postal</label>
-              <input id="postalCode" name="postalCode" required autoComplete="postal-code" />
+              <input id="postalCode" name="postalCode" required autoComplete="postal-code" defaultValue={member?.savedAddress?.postalCode ?? undefined} />
             </div>
             <div className="field">
               <label htmlFor="city">Ville</label>
-              <input id="city" name="city" required autoComplete="address-level2" />
+              <input id="city" name="city" required autoComplete="address-level2" defaultValue={member?.savedAddress?.city ?? undefined} />
             </div>
           </div>
           <div className="grid-2" style={{ gap: 12 }}>
@@ -286,7 +303,7 @@ export function Checkout({ hasCustomProducts }: { hasCustomProducts?: boolean })
             </div>
             <div className="field">
               <label htmlFor="phone">Téléphone (pour le transporteur)</label>
-              <input id="phone" name="phone" type="tel" autoComplete="tel" />
+              <input id="phone" name="phone" type="tel" autoComplete="tel" defaultValue={member?.savedAddress?.phone ?? undefined} />
             </div>
           </div>
           <label className="check">

@@ -23,7 +23,7 @@ function Msg({ s }: { s: Status }) {
   return null
 }
 
-export function GuestbookForm() {
+export function GuestbookForm({ defaultName }: { defaultName?: string }) {
   const [s, setS] = useState<Status>({ kind: 'idle' })
   return s.kind === 'ok' ? (
     <Msg s={s} />
@@ -52,7 +52,7 @@ export function GuestbookForm() {
     >
       <div className="field">
         <label htmlFor="gb-name">Pseudo</label>
-        <input id="gb-name" name="name" required maxLength={40} autoComplete="nickname" />
+        <input id="gb-name" name="name" required maxLength={40} autoComplete="nickname" defaultValue={defaultName} />
       </div>
       <div className="field">
         <label htmlFor="gb-msg">Ton petit mot</label>
@@ -83,7 +83,7 @@ export function GuestbookForm() {
   )
 }
 
-export function FanartForm() {
+export function FanartForm({ defaultName, defaultEmail }: { defaultName?: string; defaultEmail?: string }) {
   const [s, setS] = useState<Status>({ kind: 'idle' })
   return s.kind === 'ok' ? (
     <Msg s={s} />
@@ -109,7 +109,7 @@ export function FanartForm() {
         </div>
         <div className="field">
           <label htmlFor="fa-artist">Ton pseudo d’artiste</label>
-          <input id="fa-artist" name="artist" required maxLength={40} />
+          <input id="fa-artist" name="artist" required maxLength={40} defaultValue={defaultName} />
         </div>
       </div>
       <div className="field">
@@ -118,7 +118,7 @@ export function FanartForm() {
       </div>
       <div className="field">
         <label htmlFor="fa-email">Email pour te contacter / retrait (optionnel, jamais publié)</label>
-        <input id="fa-email" name="contactEmail" type="email" autoComplete="email" />
+        <input id="fa-email" name="contactEmail" type="email" autoComplete="email" defaultValue={defaultEmail} />
       </div>
       <div className="field">
         <label htmlFor="fa-img">Image (PNG, JPG, WEBP, GIF — 8 Mo max)</label>

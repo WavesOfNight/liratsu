@@ -5,6 +5,7 @@
  */
 import type { CollectionConfig } from 'payload'
 import { anyone, approvedOrModerator, hasRole, isAdmin, isModerator, isStaff } from '@/access/roles'
+import { addressFields } from '@/fields/address'
 import { moderationFields, stampModeration } from '@/fields/moderation'
 import { revalidateCollection } from '@/hooks/revalidate'
 
@@ -234,8 +235,30 @@ export const Members: CollectionConfig = {
     { name: 'twitchId', type: 'text', required: true, unique: true },
     { name: 'displayName', type: 'text', required: true },
     { name: 'avatarUrl', type: 'text' },
+    { name: 'email', label: 'Email (fourni par Twitch)', type: 'email' },
     { name: 'banned', label: 'Banni', type: 'checkbox' },
     { name: 'unlockedCodes', type: 'relationship', relationTo: 'surprise-codes', hasMany: true },
+    {
+      name: 'savedAddress',
+      label: 'Adresse enregistrée (boutique)',
+      type: 'group',
+      admin: { description: 'Renseignée automatiquement après une commande passée connecté·e — préremplit le panier la fois suivante.' },
+      fields: addressFields,
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'discordId',
+          label: 'ID Discord',
+          type: 'text',
+          unique: true,
+          admin: { readOnly: true, width: '33%', description: 'Lié via « Lier mon compte Discord » dans l’Espace communauté.' },
+        },
+        { name: 'discordUsername', label: 'Pseudo Discord', type: 'text', admin: { readOnly: true, width: '33%' } },
+        { name: 'discordAvatarUrl', label: 'Avatar Discord', type: 'text', admin: { readOnly: true, width: '33%' } },
+      ],
+    },
   ],
 }
 

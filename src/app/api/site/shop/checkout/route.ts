@@ -4,6 +4,7 @@
  * QUE par le webhook signé du prestataire.
  */
 import { error, guard, json, readJson } from '@/lib/api'
+import { readMemberId } from '@/lib/community'
 import { getPayloadClient } from '@/lib/payload'
 import { preparePendingOrder } from '@/lib/shop/orders'
 import { createPayPalOrder } from '@/lib/shop/paypal'
@@ -34,6 +35,7 @@ export async function POST(req: Request) {
       couponCode: body.data.coupon || undefined,
       provider: body.data.provider,
       testMode: integrations.testMode,
+      memberId: readMemberId(req.headers.get('cookie')),
     })
   } catch (e) {
     if (e instanceof CartError) return json({ error: e.message, code: e.code }, 422)

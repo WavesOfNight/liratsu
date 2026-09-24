@@ -2,6 +2,9 @@
  * Envoi du planning sur Discord : une image carrée façon Frutiger Aero (jaquettes des
  * jeux, jour/heure/titre), postée sur le webhook configuré dans l'admin (Clés API >
  * Discord). Aucune dépendance externe : composition d'image avec sharp (SVG + rasterisation).
+ *
+ * Contient aussi l'OAuth de liaison du compte Discord d'un membre à son compte du site
+ * (Espace communauté) — voir la section en bas de fichier.
  */
 import sharp from 'sharp'
 import { getIntegrations } from './settings'
@@ -242,4 +245,43 @@ export async function sendScheduleToDiscord(items: ScheduleItemForDiscord[]): Pr
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Erreur inconnue' }
   }
+}
+
+/**
+ * Liaison du compte Discord d'un membre (Espace communauté) : identifie simplement le
+ * compte (portée « identify »), aucun jeton conservé. Ce n'est pas une connexion — l'accès
+ * au site reste via Twitch — juste un pseudo/avatar Discord affiché sur le profil du membre.
+ */
+const DISCORD_AUTHORIZE = 'https://discord.com/oauth2/authorize'
+const DISCORD_TOKEN = 'https://discord.com/api/oauth2/token'
+const DISCORD_API = 'https://discord.com/api'
+
+export async function getDiscordLinkUrl(redirectUri: string, state: string): Promise<string | null> {
+  const { discord } = await getIntegrations()
+  if (!discord.clientId) return null
+  const p = new URLSearchParams({ client_id: discord.clientId, redirect_uri: redirectUri, response_type: 'code', scope: 'identify', state })
+  return `${DISCORD_AUTHORIZE}?${p}`
+}
+
+export type DiscordIdentity = { id: string; username: string; avatarUrl: string | null }
+
+export async function exchangeDiscordLinkCode(code: string, redirectUri: string): Promise<DiscordIdentity | null> {
+  const { discord } = await getIntegrations()
+  const r = await fetch(DISCORD_TOKEN, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: discord.clientId, client_secret: discord.clientSecret, code, grant_type: 'authorization_code', redirect_uri: redirectUri }),
+  })
+  if (!r.ok) return null
+  const { access_token } = (await r.json()) as { access_token: string }
+  const u = await fetch(`${DISCORD_API}/users/@me`, { headers: { Authorization: `Bearer ${access_token}` } })
+  await fetch(`${DISCORD_TOKEN}/revoke`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: discord.clientId, client_secret: discord.clientSecret, token: access_token }),
+  }).catch(() => {})
+  if (!u.ok) return null
+  const user = (await u.json()) as { id: string; username: string; global_name?: string | null; avatar?: string | null }
+  const avatarUrl = user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${user.avatar.startsWith('a_') ? 'gif' : 'png'}` : null
+  return { id: user.id, username: user.global_name || user.username, avatarUrl }
 }

@@ -160,13 +160,19 @@ export const Integrations: GlobalConfig = {
         {
           label: 'Discord',
           name: 'discord',
-          description: 'Webhook envoyé automatiquement à chaque changement du planning (Accueil > bloc Planning).',
+          description: 'Application à créer sur https://discord.com/developers/applications',
           fields: [
             encryptedField({
               name: 'scheduleWebhookUrl',
               label: 'URL du webhook (planning)',
               description: 'Discord : Paramètres du salon > Intégrations > Webhooks > Nouveau webhook > Copier l’URL',
             }),
+            trimmedText({
+              name: 'clientId',
+              label: 'Client ID (application OAuth)',
+              admin: { description: 'Permet aux membres de lier leur compte Discord dans l’Espace communauté.' },
+            }),
+            encryptedField({ name: 'clientSecret', label: 'Client Secret (application OAuth)' }),
           ],
         },
         {

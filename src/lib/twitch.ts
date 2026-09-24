@@ -157,15 +157,15 @@ export async function getClips(count = 6): Promise<Clip[]> {
   })
 }
 
-/** URL d'autorisation OAuth (connexion viewer, portée minimale : aucune). */
+/** URL d'autorisation OAuth (connexion viewer — email demandé pour préremplir la boutique). */
 export async function getOAuthUrl(redirectUri: string, state: string): Promise<string | null> {
   const { twitch } = await getIntegrations()
   if (!twitch.oauthEnabled || !twitch.clientId) return null
-  const p = new URLSearchParams({ client_id: twitch.clientId, redirect_uri: redirectUri, response_type: 'code', scope: '', state })
+  const p = new URLSearchParams({ client_id: twitch.clientId, redirect_uri: redirectUri, response_type: 'code', scope: 'user:read:email', state })
   return `https://id.twitch.tv/oauth2/authorize?${p}`
 }
 
-export async function exchangeOAuthCode(code: string, redirectUri: string): Promise<{ id: string; login: string; displayName: string; avatar: string } | null> {
+export async function exchangeOAuthCode(code: string, redirectUri: string): Promise<{ id: string; login: string; displayName: string; avatar: string; email: string | null } | null> {
   const { twitch } = await getIntegrations()
   const r = await fetch('https://id.twitch.tv/oauth2/token', {
     method: 'POST',
@@ -181,10 +181,10 @@ export async function exchangeOAuthCode(code: string, redirectUri: string): Prom
   const { access_token } = (await r.json()) as { access_token: string }
   const u = await fetch(`${HELIX}/users`, { headers: { 'Client-Id': twitch.clientId, Authorization: `Bearer ${access_token}` } })
   if (!u.ok) return null
-  const user = ((await u.json()) as { data: { id: string; login: string; display_name: string; profile_image_url: string }[] }).data[0]
+  const user = ((await u.json()) as { data: { id: string; login: string; display_name: string; profile_image_url: string; email?: string }[] }).data[0]
   // Le jeton utilisateur n'est pas conservé : on n'en a besoin que pour identifier le compte.
   await fetch('https://id.twitch.tv/oauth2/revoke', { method: 'POST', body: new URLSearchParams({ client_id: twitch.clientId, token: access_token }) }).catch(() => {})
-  return user ? { id: user.id, login: user.login, displayName: user.display_name, avatar: user.profile_image_url } : null
+  return user ? { id: user.id, login: user.login, displayName: user.display_name, avatar: user.profile_image_url, email: user.email ?? null } : null
 }
 
 /**

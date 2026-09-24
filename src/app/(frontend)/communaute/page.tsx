@@ -20,10 +20,24 @@ export const metadata: Metadata = {
 const MOOD: Record<string, string> = { star: '⭐', heart: '💖', fish: '🐟', bubble: '🫧', music: '🎵' }
 const FORMAT: Record<string, string> = { phone: '📱 Téléphone', tablet: '📟 Tablette', desktop: '🖥️ PC', zip: '📦 Archive' }
 
-export default async function CommunityPage() {
+const STATUS_MESSAGES: Record<string, { kind: 'ok' | 'error'; text: string }> = {
+  'login:ok': { kind: 'ok', text: 'Connecté·e avec Twitch ✦' },
+  'login:erreur': { kind: 'error', text: 'La connexion Twitch a échoué, réessaie.' },
+  'login:refuse': { kind: 'error', text: 'Ce compte est banni de l’Espace communauté.' },
+  'login:annule': { kind: 'error', text: 'Connexion annulée.' },
+  'discord:ok': { kind: 'ok', text: 'Compte Discord lié ✦' },
+  'discord:erreur': { kind: 'error', text: 'La liaison du compte Discord a échoué, réessaie.' },
+  'discord:deja-lie': { kind: 'error', text: 'Ce compte Discord est déjà lié à un autre membre.' },
+  'discord:annule': { kind: 'error', text: 'Liaison Discord annulée.' },
+}
+
+export default async function CommunityPage({ searchParams }: { searchParams: Promise<{ login?: string; discord?: string }> }) {
   const section = await getSection('community')
   if (section.status === 'off') notFound()
   if (section.status === 'soon') return <ComingSoon title="Espace communauté" section="community" text={section.teaserText} notifyForm={section.notifyForm} />
+
+  const { login, discord: discordStatus } = await searchParams
+  const banner = login ? STATUS_MESSAGES[`login:${login}`] : discordStatus ? STATUS_MESSAGES[`discord:${discordStatus}`] : null
 
   const { payload, integrations } = await getSiteData()
   const jar = await cookies()
@@ -55,6 +69,8 @@ export default async function CommunityPage() {
         <p>Un coin rien qu’à vous : contenus et petites surprises pour les viewers ✦</p>
       </header>
 
+      {banner && <p className={`form-msg ${banner.kind === 'error' ? 'form-msg--error' : ''}`} role={banner.kind === 'error' ? 'alert' : 'status'}>{banner.text}</p>}
+
       {integrations.twitch.oauthEnabled && (
         <div className={styles.memberBar}>
           {member ? (
@@ -63,6 +79,22 @@ export default async function CommunityPage() {
               <span>
                 Connecté·e en tant que <strong>{member.displayName}</strong>
               </span>
+              {integrations.discord.clientId &&
+                (member.discordUsername ? (
+                  <>
+                    <span className="muted">
+                      Discord : <strong>{member.discordUsername}</strong>
+                    </span>
+                    <form action="/api/site/community/discord/unlink" method="post">
+                      <button className="candy-btn candy-btn--ghost candy-btn--small">Délier</button>
+                    </form>
+                  </>
+                ) : (
+                  // eslint-disable-next-line @next/next/no-html-link-for-pages -- route API (redirection OAuth), pas une page
+                  <a className="candy-btn candy-btn--ghost candy-btn--small" href="/api/site/community/discord/link">
+                    Lier mon compte Discord
+                  </a>
+                ))}
               <form action="/api/site/auth/twitch/logout" method="post">
                 <button className="candy-btn candy-btn--ghost candy-btn--small">Se déconnecter</button>
               </form>
@@ -173,7 +205,7 @@ export default async function CommunityPage() {
           <details className={styles.details}>
             <summary className="candy-btn candy-btn--lagoon candy-btn--small">Envoyer un fanart</summary>
             <div style={{ marginTop: 16 }}>
-              <FanartForm />
+              <FanartForm defaultName={member?.displayName} defaultEmail={member?.email ?? undefined} />
             </div>
           </details>
         </AeroWindow>
@@ -198,7 +230,7 @@ export default async function CommunityPage() {
             </ul>
           </AeroWindow>
           <AeroWindow title="Signer le livre d’or" icon="pencil">
-            <GuestbookForm />
+            <GuestbookForm defaultName={member?.displayName} />
           </AeroWindow>
         </div>
       </div>

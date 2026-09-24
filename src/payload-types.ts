@@ -362,6 +362,7 @@ export interface Order {
   testMode?: boolean | null;
   email: string;
   customer?: (number | null) | Customer;
+  member?: (number | null) | Member;
   provider: 'stripe' | 'paypal';
   providerRef?: string | null;
   paymentId?: string | null;
@@ -457,6 +458,95 @@ export interface Customer {
   notes?: string | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "members".
+ */
+export interface Member {
+  id: number;
+  twitchId: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  email?: string | null;
+  banned?: boolean | null;
+  unlockedCodes?: (number | SurpriseCode)[] | null;
+  /**
+   * Renseignée automatiquement après une commande passée connecté·e — préremplit le panier la fois suivante.
+   */
+  savedAddress?: {
+    firstName?: string | null;
+    lastName?: string | null;
+    line1?: string | null;
+    line2?: string | null;
+    postalCode?: string | null;
+    city?: string | null;
+    country?: string | null;
+    phone?: string | null;
+  };
+  /**
+   * Lié via « Lier mon compte Discord » dans l’Espace communauté.
+   */
+  discordId?: string | null;
+  discordUsername?: string | null;
+  discordAvatarUrl?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "surprise-codes".
+ */
+export interface SurpriseCode {
+  id: number;
+  code: string;
+  source?: ('live' | 'easterEgg' | 'game' | 'other') | null;
+  unlocks?: (number | Download)[] | null;
+  message?: string | null;
+  active?: boolean | null;
+  expiresAt?: string | null;
+  redemptions?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "downloads".
+ */
+export interface Download {
+  id: number;
+  title: string;
+  kind: 'wallpaper' | 'widget' | 'emojis' | 'other';
+  preview: number | Media;
+  files?:
+    | {
+        format: 'phone' | 'tablet' | 'desktop' | 'zip';
+        file: number | ProtectedFile;
+        id?: string | null;
+      }[]
+    | null;
+  locked?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "protected-files".
+ */
+export interface ProtectedFile {
+  id: number;
+  label?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -629,61 +719,6 @@ export interface Announcement {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "downloads".
- */
-export interface Download {
-  id: number;
-  title: string;
-  kind: 'wallpaper' | 'widget' | 'emojis' | 'other';
-  preview: number | Media;
-  files?:
-    | {
-        format: 'phone' | 'tablet' | 'desktop' | 'zip';
-        file: number | ProtectedFile;
-        id?: string | null;
-      }[]
-    | null;
-  locked?: boolean | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "protected-files".
- */
-export interface ProtectedFile {
-  id: number;
-  label?: string | null;
-  updatedAt: string;
-  createdAt: string;
-  url?: string | null;
-  thumbnailURL?: string | null;
-  filename?: string | null;
-  mimeType?: string | null;
-  filesize?: number | null;
-  width?: number | null;
-  height?: number | null;
-  focalX?: number | null;
-  focalY?: number | null;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "surprise-codes".
- */
-export interface SurpriseCode {
-  id: number;
-  code: string;
-  source?: ('live' | 'easterEgg' | 'game' | 'other') | null;
-  unlocks?: (number | Download)[] | null;
-  message?: string | null;
-  active?: boolean | null;
-  expiresAt?: string | null;
-  redemptions?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "notify-signups".
  */
 export interface NotifySignup {
@@ -691,20 +726,6 @@ export interface NotifySignup {
   email: string;
   section: string;
   consentAt: string;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "members".
- */
-export interface Member {
-  id: number;
-  twitchId: string;
-  displayName: string;
-  avatarUrl?: string | null;
-  banned?: boolean | null;
-  unlockedCodes?: (number | SurpriseCode)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1189,6 +1210,7 @@ export interface OrdersSelect<T extends boolean = true> {
   testMode?: T;
   email?: T;
   customer?: T;
+  member?: T;
   provider?: T;
   providerRef?: T;
   paymentId?: T;
@@ -1495,8 +1517,24 @@ export interface MembersSelect<T extends boolean = true> {
   twitchId?: T;
   displayName?: T;
   avatarUrl?: T;
+  email?: T;
   banned?: T;
   unlockedCodes?: T;
+  savedAddress?:
+    | T
+    | {
+        firstName?: T;
+        lastName?: T;
+        line1?: T;
+        line2?: T;
+        postalCode?: T;
+        city?: T;
+        country?: T;
+        phone?: T;
+      };
+  discordId?: T;
+  discordUsername?: T;
+  discordAvatarUrl?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2419,6 +2457,14 @@ export interface Integration {
      * Discord : Paramètres du salon > Intégrations > Webhooks > Nouveau webhook > Copier l’URL — Stocké chiffré, jamais affiché en clair. Laisser le masque pour conserver la valeur.
      */
     scheduleWebhookUrl?: string | null;
+    /**
+     * Permet aux membres de lier leur compte Discord dans l’Espace communauté.
+     */
+    clientId?: string | null;
+    /**
+     * Stocké chiffré, jamais affiché en clair. Laisser le masque pour conserver la valeur.
+     */
+    clientSecret?: string | null;
   };
   analytics?: {
     provider?: ('none' | 'umami' | 'plausible') | null;
@@ -3036,6 +3082,8 @@ export interface IntegrationsSelect<T extends boolean = true> {
     | T
     | {
         scheduleWebhookUrl?: T;
+        clientId?: T;
+        clientSecret?: T;
       };
   analytics?:
     | T

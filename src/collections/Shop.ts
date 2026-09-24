@@ -4,6 +4,7 @@
  */
 import type { CollectionConfig } from 'payload'
 import { anyone, hasRole, isAdmin, isEditor } from '@/access/roles'
+import { addressFields } from '@/fields/address'
 import { revalidateCollection } from '@/hooks/revalidate'
 import { ORDER_STATUSES, ORDER_STATUS_LABELS } from '@/lib/shop/orderStatus'
 
@@ -267,27 +268,6 @@ export const Customers: CollectionConfig = {
   ],
 }
 
-const addressFields = [
-  {
-    type: 'row' as const,
-    fields: [
-      { name: 'firstName', label: 'Prénom', type: 'text' as const },
-      { name: 'lastName', label: 'Nom', type: 'text' as const },
-    ],
-  },
-  { name: 'line1', label: 'Adresse', type: 'text' as const },
-  { name: 'line2', label: 'Complément', type: 'text' as const },
-  {
-    type: 'row' as const,
-    fields: [
-      { name: 'postalCode', label: 'Code postal', type: 'text' as const },
-      { name: 'city', label: 'Ville', type: 'text' as const },
-      { name: 'country', label: 'Pays (ISO)', type: 'text' as const },
-    ],
-  },
-  { name: 'phone', label: 'Téléphone', type: 'text' as const },
-]
-
 export const Orders: CollectionConfig = {
   slug: 'orders',
   labels: { singular: 'Commande', plural: 'Commandes' },
@@ -322,6 +302,7 @@ export const Orders: CollectionConfig = {
     },
     { name: 'email', type: 'email', required: true, index: true },
     { name: 'customer', type: 'relationship', relationTo: 'customers' },
+    { name: 'member', label: 'Membre (compte Twitch)', type: 'relationship', relationTo: 'members', admin: { readOnly: true } },
     {
       type: 'row',
       fields: [
