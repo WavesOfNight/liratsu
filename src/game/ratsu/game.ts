@@ -674,6 +674,12 @@ export class Game {
       }
       c.fillStyle = 'rgba(0,0,0,0.5)'
       c.fillRect(x - frame, y - frame, w + frame * 2, h + frame * 2)
+      // Liseré bicolore sur le cadre (arête sombre dehors, arête claire dedans) façon arche taillée.
+      c.strokeStyle = 'rgba(0,0,0,0.6)'
+      c.lineWidth = 1
+      c.strokeRect(x - frame + 0.5, y - frame + 0.5, w + frame * 2 - 1, h + frame * 2 - 1)
+      c.strokeStyle = 'rgba(255,255,255,0.2)'
+      c.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1)
       // Panneau : dégradé façon vitre bombée, dans le sens de la plus grande dimension.
       const grad = w >= h ? c.createLinearGradient(x, y, x, y + h) : c.createLinearGradient(x, y, x + w, y)
       grad.addColorStop(0, light)
@@ -696,19 +702,25 @@ export class Game {
       }
       c.stroke()
       if (!open) {
-        const lx = x + w / 2
-        const ly = y + h / 2
-        c.strokeStyle = '#eaf5ff'
-        c.lineWidth = 1.5
-        c.beginPath()
-        c.arc(lx, ly - 2, 2.5, Math.PI, 0)
-        c.stroke()
-        c.fillStyle = '#eaf5ff'
-        c.fillRect(lx - 4, ly - 2, 8, 6)
-        c.fillStyle = dark
-        c.beginPath()
-        c.arc(lx, ly + 1, 1, 0, Math.PI * 2)
-        c.fill()
+        // Barreaux façon herse : la salle n'est pas nettoyée, la porte est bloquée.
+        const bars = 3
+        const barAt = (t: number) =>
+          w >= h ? { x1: x + (w * t) / (bars + 1), y1: y, x2: x + (w * t) / (bars + 1), y2: y + h } : { x1: x, y1: y + (h * t) / (bars + 1), x2: x + w, y2: y + (h * t) / (bars + 1) }
+        for (let i = 1; i <= bars; i++) {
+          const { x1, y1, x2, y2 } = barAt(i)
+          c.strokeStyle = 'rgba(20,20,20,0.85)'
+          c.lineWidth = 2.5
+          c.beginPath()
+          c.moveTo(x1, y1)
+          c.lineTo(x2, y2)
+          c.stroke()
+          c.strokeStyle = 'rgba(255,255,255,0.25)'
+          c.lineWidth = 0.75
+          c.beginPath()
+          c.moveTo(x1 - 0.5, y1)
+          c.lineTo(x2 - 0.5, y2)
+          c.stroke()
+        }
       }
     }
     door(CX - TILE / 2, 2, TILE, TOP - 2, 'up')
