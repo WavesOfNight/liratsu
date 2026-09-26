@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
+import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import React from 'react'
 import { CustomGameFrame } from '@/components/arcade/CustomGameFrame'
 import { RatsuLoader } from '@/game/ratsu/RatsuLoader'
+import { MEMBER_COOKIE, readMemberId } from '@/lib/community'
 import { getSection, getSiteData } from '@/lib/site'
 
 type Props = { params: Promise<{ slug: string }> }
@@ -31,6 +33,16 @@ export default async function ArcadeGamePage({ params }: Props) {
   const g = await load(slug)
   if (!g || g.status === 'soon') notFound()
 
+  let member: { displayName: string } | null = null
+  if (g.engine === 'ratsu') {
+    const { payload } = await getSiteData()
+    const jar = await cookies()
+    const memberCookie = jar.get(MEMBER_COOKIE)
+    const memberId = readMemberId(memberCookie ? `${MEMBER_COOKIE}=${memberCookie.value}` : null)
+    const doc = memberId ? await payload.findByID({ collection: 'members', id: memberId, depth: 0 }).catch(() => null) : null
+    member = doc ? { displayName: doc.displayName } : null
+  }
+
   return (
     <div className="container">
       <nav style={{ margin: '24px 0 8px' }}>
@@ -40,7 +52,7 @@ export default async function ArcadeGamePage({ params }: Props) {
         <h1>{g.title}</h1>
         {g.tagline && <p>{g.tagline}</p>}
       </header>
-      {g.engine === 'ratsu' ? <RatsuLoader /> : <CustomGameFrame slug={g.slug ?? slug} title={g.title} hasCode={Boolean(g.code?.trim())} />}
+      {g.engine === 'ratsu' ? <RatsuLoader member={member} /> : <CustomGameFrame slug={g.slug ?? slug} title={g.title} hasCode={Boolean(g.code?.trim())} />}
     </div>
   )
 }

@@ -737,6 +737,7 @@ export interface Score {
   id: number;
   game: string;
   nickname: string;
+  member?: (number | null) | Member;
   score: number;
   floor: number;
   won?: boolean | null;
@@ -1545,6 +1546,7 @@ export interface MembersSelect<T extends boolean = true> {
 export interface ScoresSelect<T extends boolean = true> {
   game?: T;
   nickname?: T;
+  member?: T;
   score?: T;
   floor?: T;
   won?: T;

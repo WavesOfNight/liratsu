@@ -35,6 +35,7 @@ export const Scores: CollectionConfig = {
   fields: [
     { name: 'game', type: 'text', required: true, defaultValue: 'the-ratsu', index: true },
     { name: 'nickname', label: 'Pseudo', type: 'text', required: true },
+    { name: 'member', label: 'Membre (compte Twitch)', type: 'relationship', relationTo: 'members', admin: { readOnly: true } },
     { name: 'score', type: 'number', required: true, index: true },
     { name: 'floor', label: 'Étage', type: 'number', required: true },
     { name: 'won', label: 'Victoire', type: 'checkbox' },

@@ -8,7 +8,7 @@ import Link from 'next/link'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { playSound } from '@/components/prefs/sounds'
 import { loadRatsuAssets } from './assets'
-import { Game, type GameResult, H, W } from './game'
+import { CANVAS_H, CANVAS_W, Game, type GameResult } from './game'
 import { Input } from './input'
 import styles from './ratsu.module.css'
 
@@ -24,10 +24,11 @@ type Session = {
   music: Track[]
 }
 type Row = { nickname: string; score: number; floor: number; won: boolean }
+export type RatsuMember = { displayName: string } | null
 
 const MUSIC_KEY = 'liratsu:ratsu-music'
 
-export default function RatsuGame() {
+export default function RatsuGame({ member = null }: { member?: RatsuMember }) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const gameRef = useRef<Game | null>(null)
@@ -42,6 +43,7 @@ export default function RatsuGame() {
   const [submit, setSubmit] = useState<{ state: 'idle' | 'sending' | 'done'; msg?: string; rewards?: { code: string; message: string }[] }>({ state: 'idle' })
   const [touch, setTouch] = useState(false)
   const [musicOn, setMusicOn] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
 
   const loadBoard = useCallback(async (d: boolean) => {
     const r = await fetch(`/api/site/game/leaderboard${d ? '?daily=1' : ''}`).catch(() => null)
@@ -65,6 +67,17 @@ export default function RatsuGame() {
       audioRef.current = null
     }
   }, [loadBoard])
+
+  useEffect(() => {
+    const onChange = () => setFullscreen(Boolean(document.fullscreenElement))
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen()
+    else void wrapRef.current?.requestFullscreen()
+  }
 
   const toggleMusic = () => {
     setMusicOn((on) => {
@@ -172,15 +185,13 @@ export default function RatsuGame() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session])
 
-  const sendScore = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const sendScore = async () => {
     if (!result || !session) return
-    const nickname = String(new FormData(e.currentTarget).get('nickname') ?? '')
     setSubmit({ state: 'sending' })
     const r = await fetch('/api/site/game/score', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId: session.sessionId, nickname, score: result.score, floor: result.floor, won: result.won, durationMs: result.durationMs, kills: result.kills, rooms: result.rooms }),
+      body: JSON.stringify({ sessionId: session.sessionId, score: result.score, floor: result.floor, won: result.won, durationMs: result.durationMs, kills: result.kills, rooms: result.rooms }),
     }).catch(() => null)
     const d = r ? await r.json().catch(() => ({})) : {}
     setSubmit({ state: 'done', msg: r?.ok ? (d.saved ? 'Score enregistré ✦' : (d.error ?? 'Score non classé.')) : (d.error ?? 'Envoi impossible.'), rewards: d.rewards })
@@ -206,6 +217,11 @@ export default function RatsuGame() {
               {musicOn ? '🎵 Musique' : '🔇 Musique'}
             </button>
           )}
+          {!!session && (
+            <button type="button" className="candy-btn candy-btn--ghost candy-btn--small" aria-pressed={fullscreen} onClick={toggleFullscreen} title="Plein écran">
+              {fullscreen ? '⛶ Quitter le plein écran' : '⛶ Plein écran'}
+            </button>
+          )}
         </div>
 
         <div
@@ -219,7 +235,7 @@ export default function RatsuGame() {
             if (inputRef.current && gameRef.current?.state === 'title') inputRef.current.confirmPressed = true
           }}
         >
-          <canvas ref={canvasRef} width={W} height={H} className={styles.canvas} />
+          <canvas ref={canvasRef} width={CANVAS_W} height={CANVAS_H} className={styles.canvas} />
           {!session && (
             <div className={styles.cover}>
               <p>Clique sur « Jouer » pour lancer une partie !</p>
@@ -244,15 +260,25 @@ export default function RatsuGame() {
                 Score <strong>{result.score}</strong> · étage {result.floor} · {result.kills} ennemis · {Math.round(result.durationMs / 1000)} s
               </p>
               {submit.state !== 'done' ? (
-                session?.leaderboard !== false && (
-                  <form onSubmit={sendScore} className={styles.scoreForm}>
-                    <label htmlFor="nick">Pseudo (visible dans le classement)</label>
-                    <input id="nick" name="nickname" required minLength={2} maxLength={20} className="input" autoComplete="nickname" />
-                    <button className="candy-btn candy-btn--star" disabled={submit.state === 'sending'}>
-                      Enregistrer
+                session?.leaderboard !== false &&
+                (member ? (
+                  <div className={styles.scoreForm}>
+                    <p style={{ margin: 0 }}>
+                      Connecté·e en tant que <strong>{member.displayName}</strong>
+                    </p>
+                    <button type="button" className="candy-btn candy-btn--star" disabled={submit.state === 'sending'} onClick={sendScore}>
+                      {submit.state === 'sending' ? 'Envoi…' : 'Enregistrer mon score'}
                     </button>
-                  </form>
-                )
+                  </div>
+                ) : (
+                  <div className={styles.scoreForm}>
+                    <p style={{ margin: 0 }}>Connecte-toi avec Twitch pour enregistrer ton score dans le classement.</p>
+                    {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- route API (redirection OAuth), pas une page */}
+                    <a className="candy-btn candy-btn--small" href="/api/site/auth/twitch/login">
+                      Se connecter avec Twitch
+                    </a>
+                  </div>
+                ))
               ) : (
                 <>
                   <p role="status">{submit.msg}</p>

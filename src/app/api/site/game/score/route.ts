@@ -1,11 +1,11 @@
 import { z } from 'zod'
 import { cleanNickname, validateScore } from '@/game/ratsu/validate'
 import { error, guard, json, readJson } from '@/lib/api'
+import { readMemberId } from '@/lib/community'
 import { getPayloadClient } from '@/lib/payload'
 
 const schema = z.object({
   sessionId: z.number().int().positive(),
-  nickname: z.string().max(40),
   score: z.number().int().min(0).max(1_000_000),
   floor: z.number().int().min(1).max(50),
   won: z.boolean(),
@@ -17,6 +17,8 @@ const schema = z.object({
 /**
  * Enregistre un score après validation anti-triche (session unique, durée mesurée par le
  * serveur, score plausible, limite de débit), puis renvoie les éventuels déblocages.
+ * Le classement n'accepte que les scores d'un compte Twitch connecté (voir Espace communauté) :
+ * le pseudo vient du membre, jamais d'une saisie libre du client.
  */
 export async function POST(req: Request) {
   const blocked = guard(req, 'game-score', 6, 10 * 60_000)
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
   const check = validateScore(d, elapsed, { maxFloors: settings?.floors ?? 5, maxScorePerSecond: settings?.maxScorePerSecond ?? 60 })
   if (!check.ok) return error(`Score refusé (${check.reason}).`, 422)
 
-  // Déblocages (indépendants du classement)
+  // Déblocages (indépendants du classement, accessibles sans connexion Twitch)
   const rewards: { code: string; message: string }[] = []
   for (const u of settings?.unlocks ?? []) {
     const reward = typeof u.reward === 'object' ? u.reward : null
@@ -49,11 +51,14 @@ export async function POST(req: Request) {
 
   let saved = false
   if (settings?.leaderboardEnabled !== false) {
-    const nickname = cleanNickname(d.nickname)
-    if (!nickname) return json({ saved: false, rewards, error: 'Pseudo refusé (2 à 20 caractères, sans propos déplacé).' })
+    const memberId = readMemberId(req.headers.get('cookie'))
+    if (!memberId) return json({ saved: false, rewards, error: 'Connecte-toi avec Twitch pour enregistrer ton score.' })
+    const member = await payload.findByID({ collection: 'members', id: memberId, depth: 0 }).catch(() => null)
+    const nickname = member ? cleanNickname(member.displayName) : null
+    if (!nickname) return json({ saved: false, rewards, error: 'Connecte-toi avec Twitch pour enregistrer ton score.' })
     await payload.create({
       collection: 'scores',
-      data: { game: 'the-ratsu', nickname, score: d.score, floor: d.floor, won: d.won, durationMs: Math.min(d.durationMs, elapsed), seed: session.seed, daily: Boolean(session.daily) },
+      data: { game: 'the-ratsu', nickname, member: memberId, score: d.score, floor: d.floor, won: d.won, durationMs: Math.min(d.durationMs, elapsed), seed: session.seed, daily: Boolean(session.daily) },
       overrideAccess: true,
     })
     saved = true

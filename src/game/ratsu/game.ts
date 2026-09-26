@@ -13,6 +13,11 @@ import { drawHeart } from './sprites'
 export const TILE = 24
 export const W = COLS * TILE + TILE * 2 // 360
 export const H = ROWS * TILE + TILE * 2 // 216
+/** Suréchantillonnage du canvas : la logique de jeu garde ses unités (W×H), le rendu se fait
+ * sur un buffer 3× plus grand pour préserver le détail des sprites (moins de blocs à l'agrandissement CSS). */
+export const RENDER_SCALE = 3
+export const CANVAS_W = W * RENDER_SCALE
+export const CANVAS_H = H * RENDER_SCALE
 const LEFT = TILE
 const TOP = TILE
 const RIGHT = LEFT + COLS * TILE
@@ -511,6 +516,8 @@ export class Game {
   // ---------------------------------------------------------------- rendu
   render() {
     const c = this.ctx
+    // setTransform (absolu) plutôt que scale : évite d'accumuler l'échelle d'une frame à l'autre.
+    c.setTransform(RENDER_SCALE, 0, 0, RENDER_SCALE, 0, 0)
     c.imageSmoothingEnabled = false
     c.clearRect(0, 0, W, H)
     if (this.state === 'title') return this.renderTitle()
@@ -781,26 +788,64 @@ export class Game {
     }
   }
 
+  /** Rectangle aux coins arrondis, façon plaque HUD (fond posé par l'appelant avant `.fill()`). */
+  private hudPanel(x: number, y: number, w: number, h: number, r: number) {
+    const c = this.ctx
+    c.beginPath()
+    c.moveTo(x + r, y)
+    c.arcTo(x + w, y, x + w, y + h, r)
+    c.arcTo(x + w, y + h, x, y + h, r)
+    c.arcTo(x, y + h, x, y, r)
+    c.arcTo(x, y, x + w, y, r)
+    c.closePath()
+    c.fill()
+  }
+
   private renderHud() {
     const c = this.ctx
-    for (let i = 0; i < this.stats.maxHearts; i++) drawHeart(c, 6 + i * 9, 6, this.hearts > i ? 1 : 0)
+    const assets = this.opts.assets
+
+    // Cœurs (une vie = un cœur entier ; l'état vide reprend l'image, grisée).
+    const heartSize = 11
+    for (let i = 0; i < this.stats.maxHearts; i++) {
+      c.save()
+      if (this.hearts <= i) c.filter = 'grayscale(1) opacity(0.4)'
+      c.drawImage(assets.heartFull, 5 + i * (heartSize + 1), 4, heartSize, heartSize)
+      c.restore()
+    }
+
+    // Plaque ressources (pièces, bombes) façon Isaac.
+    const px = 4
+    const py = 18
+    c.fillStyle = 'rgba(11,26,58,0.55)'
+    this.hudPanel(px, py, 60, 30, 4)
+
+    const coinImg = assets.coin
+    const coinSize = fitSize(coinImg.width, coinImg.height, 12)
+    c.drawImage(coinImg, px + 4, py + 3, coinSize.w, coinSize.h)
     c.fillStyle = '#ffd35c'
-    c.font = '8px monospace'
-    c.fillText(`◆ ${this.coins}`, 6, 22)
-    const bombImg = this.opts.assets.bombContainer
-    c.drawImage(bombImg, 4, 26, 12, 12)
+    c.font = 'bold 9px monospace'
+    c.fillText(`${this.coins}`, px + 20, py + 13)
+
+    c.drawImage(assets.bombContainer, px + 2, py + 15, 14, 14)
+    const bombIconSize = fitSize(assets.bomb.icon.width, assets.bomb.icon.height, 9)
+    c.drawImage(assets.bomb.icon, px + 2 + (14 - bombIconSize.w) / 2, py + 15 + (14 - bombIconSize.h) / 2, bombIconSize.w, bombIconSize.h)
     c.fillStyle = '#eaf5ff'
-    c.fillText(`${this.bombs}`, 18, 35)
+    c.fillText(`${this.bombs}`, px + 20, py + 27)
+
+    c.font = '8px monospace'
     c.fillStyle = '#eaf5ff'
     c.fillText(`Étage ${this.floorIndex + 1}/${this.opts.floors}  ·  ${Math.round(this.score)} pts`, 110, 11)
     if (this.opts.daily) {
       c.fillStyle = '#ff7eb6'
       c.fillText('défi du jour', 110, 21)
     }
-    // Mini-carte
+    // Mini-carte, dans son propre cadre.
     const size = 5
     const ox = W - 60
     const oy = 3
+    c.fillStyle = 'rgba(11,26,58,0.55)'
+    this.hudPanel(ox - 4, oy - 3, 60, 30, 4)
     for (const r of this.floor.rooms.values()) {
       const near = [...Object.keys(r.doors)].some((d) => {
         const [dx, dy] = DIRS[d as Dir]
