@@ -3,12 +3,19 @@ import { notFound } from 'next/navigation'
 import React from 'react'
 import { BlockRenderer } from '@/components/blocks/BlockRenderer'
 import { ComingSoon } from '@/components/ComingSoon'
-import { getSection, getSiteData } from '@/lib/site'
+import { getSection, getSiteData, mediaUrl } from '@/lib/site'
 
 export async function generateMetadata(): Promise<Metadata> {
   const { payload } = await getSiteData()
-  const bio = await payload.findGlobal({ slug: 'biography-page', depth: 0 })
-  return { title: bio.seo?.title || bio.title || 'Biographie', description: bio.seo?.description || bio.intro || undefined, alternates: { canonical: '/biographie' } }
+  const bio = await payload.findGlobal({ slug: 'biography-page', depth: 1 })
+  const description = bio.seo?.description || bio.intro
+  const img = mediaUrl(bio.seo?.image, 'wide')
+  return {
+    title: bio.seo?.title || bio.title || 'Biographie',
+    ...(description ? { description } : {}),
+    alternates: { canonical: '/biographie' },
+    ...(img ? { openGraph: { images: [{ url: img }] } } : {}),
+  }
 }
 
 export default async function BiographyPage() {

@@ -24,11 +24,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const p = await load(slug)
   if (!p) return {}
   const img = mediaUrl(p.images?.[0]?.image, 'card')
+  const description = p.seo?.description || p.shortDescription
   return {
     title: p.seo?.title || p.title,
-    description: p.seo?.description || p.shortDescription || undefined,
+    ...(description ? { description } : {}),
     alternates: { canonical: `/boutique/${slug}` },
-    openGraph: img ? { images: [{ url: img }] } : undefined,
+    ...(img ? { openGraph: { images: [{ url: img }] } } : {}),
   }
 }
 

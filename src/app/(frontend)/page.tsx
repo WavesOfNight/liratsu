@@ -9,9 +9,11 @@ import { absoluteUrl, getSection, getSiteData, mediaUrl } from '@/lib/site'
 export async function generateMetadata(): Promise<Metadata> {
   const { payload } = await getSiteData()
   const home = await payload.findGlobal({ slug: 'home-page', depth: 1 })
+  const img = mediaUrl(home.seo?.image, 'wide')
   return {
-    title: home.seo?.title ? { absolute: home.seo.title } : undefined,
-    description: home.seo?.description ?? undefined,
+    ...(home.seo?.title ? { title: { absolute: home.seo.title } } : {}),
+    ...(home.seo?.description ? { description: home.seo.description } : {}),
+    ...(img ? { openGraph: { images: [{ url: img }] } } : {}),
   }
 }
 

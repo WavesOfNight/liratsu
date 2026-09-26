@@ -9,8 +9,15 @@ import styles from './links.module.css'
 
 export async function generateMetadata(): Promise<Metadata> {
   const { payload } = await getSiteData()
-  const p = await payload.findGlobal({ slug: 'links-page', depth: 0 })
-  return { title: p.seo?.title || p.title || 'Liens', description: p.seo?.description || p.subtitle || undefined, alternates: { canonical: '/liens' } }
+  const p = await payload.findGlobal({ slug: 'links-page', depth: 1 })
+  const description = p.seo?.description || p.subtitle
+  const img = mediaUrl(p.seo?.image, 'wide')
+  return {
+    title: p.seo?.title || p.title || 'Liens',
+    ...(description ? { description } : {}),
+    alternates: { canonical: '/liens' },
+    ...(img ? { openGraph: { images: [{ url: img }] } } : {}),
+  }
 }
 
 const EMOJI: Record<string, string> = { shop: '🛍️', star: '⭐', bubble: '🫧', heart: '💖', gamepad: '🎮', mail: '💌' }
