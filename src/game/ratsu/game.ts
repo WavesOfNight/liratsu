@@ -79,6 +79,7 @@ export class Game {
   private bombs: number
   private activeBombs: Bomb[] = []
   private floorTiles = new Map<HTMLImageElement, HTMLCanvasElement>()
+  private wallTiles = new Map<HTMLImageElement, HTMLCanvasElement>()
   private message: { text: string; t: number } | null = null
   private playTime = 0
   private startedAt = 0
@@ -297,7 +298,8 @@ export class Game {
         this.pickups.push({ kind: 'heart', x: CX - 30, y: CY + 30 })
         this.say(this.floorIndex + 1 >= this.opts.floors ? 'Victoire ! Plonge dans le portail ✦' : 'Boss vaincu ! Un portail-bulle apparaît…')
       } else if (this.rng.chance(0.3 + s.luck * 0.1)) {
-        this.pickups.push({ kind: this.rng.chance(0.3) ? 'heart' : 'coin', x: CX, y: CY })
+        const spot = this.freeTileNear(CX, CY)
+        this.pickups.push({ kind: this.rng.chance(0.3) ? 'heart' : 'coin', x: spot.x, y: spot.y })
       }
     }
   }
@@ -456,9 +458,32 @@ export class Game {
     this.burst(e.x, e.y, e.kind === 'blob' ? '#ff8a3d' : '#bfe8ff', 12)
     // The Saac disperse 4 billes rouges à sa mort (croix diagonale, comme son propre déplacement).
     if (e.kind === 'saac') for (let i = 0; i < 4; i++) this.enemyShot(e, (i / 4) * Math.PI * 2 + Math.PI / 4, 70 * this.m)
-    if (e.kind !== 'boss' && this.rng.chance(0.3 + this.stats.luck * 0.08)) this.pickups.push({ kind: 'coin', x: e.x, y: e.y })
-    else if (e.kind !== 'boss' && this.rng.chance(0.08)) this.pickups.push({ kind: 'bomb', x: e.x, y: e.y })
-    else if (e.kind !== 'boss' && this.rng.chance(0.04)) this.pickups.push({ kind: 'heart', x: e.x, y: e.y })
+    if (e.kind === 'boss') return
+    const spot = this.freeTileNear(e.x, e.y)
+    if (this.rng.chance(0.3 + this.stats.luck * 0.08)) this.pickups.push({ kind: 'coin', x: spot.x, y: spot.y })
+    else if (this.rng.chance(0.08)) this.pickups.push({ kind: 'bomb', x: spot.x, y: spot.y })
+    else if (this.rng.chance(0.04)) this.pickups.push({ kind: 'heart', x: spot.x, y: spot.y })
+  }
+
+  /** Décale une position vers la tuile libre (sans rocher) la plus proche, pour éviter qu'un
+   * objet lâché par un ennemi n'apparaisse au-dessus d'un obstacle et devienne inaccessible. */
+  private freeTileNear(x: number, y: number): { x: number; y: number } {
+    const tx0 = Math.round((x - LEFT - TILE / 2) / TILE)
+    const ty0 = Math.round((y - TOP - TILE / 2) / TILE)
+    const blocked = (tx: number, ty: number) => this.room.rocks.some(([rx, ry]) => rx === tx && ry === ty)
+    if (!blocked(tx0, ty0)) return { x, y }
+    for (let radius = 1; radius <= 6; radius++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        for (let dy = -radius; dy <= radius; dy++) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue
+          const tx = tx0 + dx
+          const ty = ty0 + dy
+          if (tx < 0 || ty < 0 || tx >= COLS || ty >= ROWS || blocked(tx, ty)) continue
+          return { x: LEFT + tx * TILE + TILE / 2, y: TOP + ty * TILE + TILE / 2 }
+        }
+      }
+    }
+    return { x, y }
   }
 
   private updatePickups() {
@@ -522,6 +547,7 @@ export class Game {
     c.clearRect(0, 0, W, H)
     if (this.state === 'title') return this.renderTitle()
     this.renderRoom()
+    for (const b of this.activeBombs) this.renderBomb(b)
     for (const p of this.pickups) this.renderPickup(p)
     for (const e of this.enemies) this.renderEnemy(e)
     this.renderPlayer()
@@ -542,6 +568,20 @@ export class Game {
     if (!t) {
       t = tileCanvas(img, TILE)
       this.floorTiles.set(img, t)
+    }
+    return t
+  }
+
+  /** Même texture que le sol, assombrie (mur), pour donner du relief sans casser le raccord visuel. */
+  private wallTileFor(img: HTMLImageElement): HTMLCanvasElement {
+    let t = this.wallTiles.get(img)
+    if (!t) {
+      t = tileCanvas(img, TILE)
+      const wctx = t.getContext('2d')!
+      wctx.globalCompositeOperation = 'source-atop'
+      wctx.fillStyle = 'rgba(0,0,0,0.55)'
+      wctx.fillRect(0, 0, TILE, TILE)
+      this.wallTiles.set(img, t)
     }
     return t
   }
@@ -568,12 +608,34 @@ export class Game {
       c.lineTo(x - 50, BOTTOM)
       c.fill()
     }
-    // Murs : verre épais glossy
-    c.fillStyle = this.room.kind === 'boss' ? '#3a1d5c' : this.room.kind === 'shop' ? '#1a6f5c' : '#123c72'
+    // Murs : même texture que le sol, assombrie, + teinte selon le type de salle.
+    const wallPat = c.createPattern(this.wallTileFor(floorImg), 'repeat')
+    if (wallPat) {
+      c.fillStyle = wallPat
+      c.fillRect(0, 0, W, TOP)
+      c.fillRect(0, BOTTOM, W, TILE)
+      c.fillRect(0, 0, LEFT, H)
+      c.fillRect(RIGHT, 0, TILE, H)
+    }
+    c.fillStyle = this.room.kind === 'boss' ? 'rgba(58,29,92,0.55)' : this.room.kind === 'shop' ? 'rgba(26,111,92,0.5)' : 'rgba(18,60,114,0.55)'
     c.fillRect(0, 0, W, TOP)
     c.fillRect(0, BOTTOM, W, TILE)
     c.fillRect(0, 0, LEFT, H)
     c.fillRect(RIGHT, 0, TILE, H)
+    // Ombre portée des murs sur le sol : relief façon « vrai mur » vu de dessus.
+    const sh = 6
+    const band = (x0: number, y0: number, x1: number, y1: number, w: number, h: number, strength: number) => {
+      const g = c.createLinearGradient(x0, y0, x1, y1)
+      g.addColorStop(0, `rgba(0,0,0,${strength})`)
+      g.addColorStop(1, 'rgba(0,0,0,0)')
+      c.fillStyle = g
+      c.fillRect(Math.min(x0, x1), Math.min(y0, y1), w, h)
+    }
+    band(LEFT, TOP, LEFT, TOP + sh, COLS * TILE, sh, 0.45)
+    band(LEFT, BOTTOM, LEFT, BOTTOM - sh, COLS * TILE, sh, 0.35)
+    band(LEFT, TOP, LEFT + sh, TOP, sh, ROWS * TILE, 0.45)
+    band(RIGHT, TOP, RIGHT - sh, TOP, sh, ROWS * TILE, 0.45)
+    // Reflet vitré (esthétique verre conservée) + liseré.
     c.fillStyle = 'rgba(255,255,255,0.18)'
     c.fillRect(0, 0, W, 4)
     c.strokeStyle = '#bfe8ff'
@@ -724,6 +786,23 @@ export class Game {
       c.arc(s.x, s.y, s.r, 0, Math.PI * 2)
       c.fill()
     }
+  }
+
+  /** Bombe posée au sol, en cours d'amorçage : mèche animée (2 frames), clignote plus vite juste avant d'exploser. */
+  private renderBomb(b: Bomb) {
+    const c = this.ctx
+    const frames = this.opts.assets.bomb.frames
+    const urgent = b.t < 0.5
+    const frame = frames[Math.floor(this.time * (urgent ? 12 : 5)) % frames.length]
+    const { w, h } = fitSize(frame.width, frame.height, 16)
+    c.save()
+    c.translate(Math.round(b.x), Math.round(b.y))
+    if (urgent) {
+      const s = 1 + Math.sin(this.time * 30) * 0.08
+      c.scale(s, s)
+    }
+    c.drawImage(frame, -w / 2, -h / 2, w, h)
+    c.restore()
   }
 
   private renderPickup(p: Pickup) {
