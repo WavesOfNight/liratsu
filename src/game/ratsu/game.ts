@@ -173,7 +173,7 @@ export class Game {
   private solidAt(x: number, y: number) {
     const tx = Math.floor((x - LEFT) / TILE)
     const ty = Math.floor((y - TOP) / TILE)
-    return this.room.rocks.some(([rx, ry]) => rx === tx && ry === ty)
+    return this.room.rocks.some((r) => r.x === tx && r.y === ty)
   }
 
   /** Déplacement avec collisions (murs, rochers) ; renvoie true si bloqué. */
@@ -188,9 +188,9 @@ export class Game {
       const minY = TOP + r - (doorGap && inDoorY && this.room.doors.up ? TILE : 0)
       const maxY = BOTTOM - r + (doorGap && inDoorY && this.room.doors.down ? TILE : 0)
       if (nx < minX || nx > maxX || ny < minY || ny > maxY) return false
-      for (const [rx, ry] of this.room.rocks) {
-        const bx = LEFT + rx * TILE
-        const by = TOP + ry * TILE
+      for (const rock of this.room.rocks) {
+        const bx = LEFT + rock.x * TILE
+        const by = TOP + rock.y * TILE
         const cx = Math.max(bx, Math.min(nx, bx + TILE))
         const cy = Math.max(by, Math.min(ny, by + TILE))
         if (Math.hypot(nx - cx, ny - cy) < r) return false
@@ -326,9 +326,9 @@ export class Game {
       if (e.hp <= 0) this.killEnemy(e)
     }
     this.enemies = this.enemies.filter((e) => e.hp > 0)
-    this.room.rocks = this.room.rocks.filter(([rx, ry]) => {
-      const cx = LEFT + rx * TILE + TILE / 2
-      const cy = TOP + ry * TILE + TILE / 2
+    this.room.rocks = this.room.rocks.filter((r) => {
+      const cx = LEFT + r.x * TILE + TILE / 2
+      const cy = TOP + r.y * TILE + TILE / 2
       return Math.hypot(cx - b.x, cy - b.y) >= RADIUS
     })
     if (Math.hypot(this.px - b.x, this.py - b.y) < RADIUS) this.hurtPlayer()
@@ -470,7 +470,7 @@ export class Game {
   private freeTileNear(x: number, y: number): { x: number; y: number } {
     const tx0 = Math.round((x - LEFT - TILE / 2) / TILE)
     const ty0 = Math.round((y - TOP - TILE / 2) / TILE)
-    const blocked = (tx: number, ty: number) => this.room.rocks.some(([rx, ry]) => rx === tx && ry === ty)
+    const blocked = (tx: number, ty: number) => this.room.rocks.some((r) => r.x === tx && r.y === ty)
     if (!blocked(tx0, ty0)) return { x, y }
     for (let radius = 1; radius <= 6; radius++) {
       for (let dx = -radius; dx <= radius; dx++) {
@@ -674,18 +674,10 @@ export class Game {
     door(CX - TILE / 2, BOTTOM, TILE, TILE - 2, 'down')
     door(2, CY - TILE / 2, LEFT - 2, TILE, 'left')
     door(RIGHT, CY - TILE / 2, TILE - 2, TILE, 'right')
-    // Rochers : coraux-bulles roses (destructibles à la bombe)
-    for (const [rx, ry] of this.room.rocks) {
-      const x = LEFT + rx * TILE
-      const y = TOP + ry * TILE
-      c.fillStyle = '#ff7eb6'
-      c.beginPath()
-      c.arc(x + 8, y + 14, 7, 0, Math.PI * 2)
-      c.arc(x + 16, y + 10, 8, 0, Math.PI * 2)
-      c.arc(x + 14, y + 18, 6, 0, Math.PI * 2)
-      c.fill()
-      c.fillStyle = '#ffd1e4'
-      c.fillRect(x + 12, y + 5, 3, 2)
+    // Rochers (destructibles à la bombe) : sprite de pierre, variante tirée au sort par tuile.
+    for (const r of this.room.rocks) {
+      const img = this.opts.assets.rocks[r.variant] ?? this.opts.assets.rocks[0]
+      c.drawImage(img, LEFT + r.x * TILE, TOP + r.y * TILE, TILE, TILE)
     }
   }
 

@@ -9,6 +9,8 @@ export type Dir = 'up' | 'down' | 'left' | 'right'
 export const DIRS: Record<Dir, [number, number]> = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] }
 export const OPPOSITE: Record<Dir, Dir> = { up: 'down', down: 'up', left: 'right', right: 'left' }
 
+export type Rock = { x: number; y: number; variant: number }
+
 export type Room = {
   x: number
   y: number
@@ -16,7 +18,7 @@ export type Room = {
   doors: Partial<Record<Dir, true>>
   cleared: boolean
   visited: boolean
-  rocks: [number, number][] // tuiles bloquantes
+  rocks: Rock[] // tuiles bloquantes
   pickupsTaken: boolean
 }
 
@@ -74,16 +76,18 @@ export function generateFloor(rng: Rng, index: number): Floor {
     deadEnds[1].kind = 'treasure'
     deadEnds[2].kind = 'shop'
     deadEnds[1].cleared = deadEnds[2].cleared = true
-    // Obstacles (coraux-bulles) dans les salles normales
+    // Obstacles (rochers) dans les salles normales : un agencement tiré au sort, chaque
+    // tuile reçoit en plus une variante de rocher aléatoire (parmi les sprites disponibles)
+    // pour que le mur d'obstacles n'ait pas l'air d'un copier-coller.
     for (const r of rooms.values()) {
       if (r.kind !== 'normal') continue
       const layout = rng.int(0, 4)
-      const rocks: [number, number][] = []
-      if (layout === 1) rocks.push([3, 2], [9, 2], [3, 4], [9, 4])
-      if (layout === 2) for (let x = 4; x <= 8; x++) rocks.push([x, 3])
-      if (layout === 3) rocks.push([2, 1], [10, 1], [2, 5], [10, 5], [6, 3])
-      if (layout === 4) rocks.push([5, 2], [7, 2], [5, 4], [7, 4])
-      r.rocks = rocks
+      const tiles: [number, number][] = []
+      if (layout === 1) tiles.push([3, 2], [9, 2], [3, 4], [9, 4])
+      if (layout === 2) for (let x = 4; x <= 8; x++) tiles.push([x, 3])
+      if (layout === 3) tiles.push([2, 1], [10, 1], [2, 5], [10, 5], [6, 3])
+      if (layout === 4) tiles.push([5, 2], [7, 2], [5, 4], [7, 4])
+      r.rocks = tiles.map(([x, y]) => ({ x, y, variant: rng.int(0, 3) }))
     }
     return { rooms, start, index, floorTheme: rng.int(0, 3) }
   }

@@ -11,6 +11,7 @@ export type RatsuAssets = {
   blob: HTMLImageElement
   saac: Record<SaacDir, HTMLImageElement>
   floors: { shop: HTMLImageElement; itemroom: HTMLImageElement; normal: HTMLImageElement[] }
+  rocks: HTMLImageElement[]
   bomb: { icon: HTMLImageElement; frames: HTMLImageElement[] }
   bombContainer: HTMLImageElement
   itemContainer: HTMLImageElement
@@ -50,6 +51,10 @@ export function loadRatsuAssets(): Promise<RatsuAssets> {
         bad,
         shop,
         itemroom,
+        rock1,
+        rock2,
+        rock3,
+        rock4,
         bombIcon,
         bomb1,
         bomb2,
@@ -73,6 +78,10 @@ export function loadRatsuAssets(): Promise<RatsuAssets> {
         loadImage('/Tileset/Sol/bad_floor.png'),
         loadImage('/Tileset/Sol/Shop_Floor.png'),
         loadImage('/Tileset/Sol/itemroom_floor.png'),
+        loadImage('/Tileset/Obstacle/rock1.png'),
+        loadImage('/Tileset/Obstacle/rock2.png'),
+        loadImage('/Tileset/Obstacle/Rock 3.png'),
+        loadImage('/Tileset/Obstacle/Rock5.png'),
         loadImage('/Item/Bomb.png'),
         loadImage('/Item/bombanimation/Bomb_1.png'),
         loadImage('/Item/bombanimation/Bomb_2png.png'),
@@ -86,6 +95,7 @@ export function loadRatsuAssets(): Promise<RatsuAssets> {
         blob,
         saac: { downLeft, downRight, upLeft, upRight },
         floors: { shop, itemroom, normal: [red, stone, wood, bad] },
+        rocks: [rock1, rock2, rock3, rock4],
         bomb: { icon: bombIcon, frames: [bomb1, bomb2] },
         bombContainer,
         itemContainer,
