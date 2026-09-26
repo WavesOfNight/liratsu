@@ -135,7 +135,7 @@ export class Game {
       this.pickups.push({ kind: 'item', x: CX - 48, y: CY, item: this.rollItem(), price: 15 })
       this.pickups.push({ kind: 'item', x: CX, y: CY, item: this.rollItem(), price: 15 })
       this.pickups.push({ kind: 'heart', x: CX + 48, y: CY, price: 5 })
-      this.say('Boutique de coquillages ✦')
+      this.say('Boutique de pièces ✦')
     }
     if (room.kind === 'boss' && room.cleared) this.pickups.push({ kind: 'portal', x: CX, y: CY })
   }
@@ -496,7 +496,7 @@ export class Game {
       }
       if (p.price) {
         if (this.coins < p.price) {
-          if (!this.message) this.say(`Il te faut ${p.price} coquillages`)
+          if (!this.message) this.say(`Il te faut ${p.price} pièces`)
           continue
         }
         this.coins -= p.price
@@ -636,8 +636,8 @@ export class Game {
     band(LEFT, TOP, LEFT + sh, TOP, sh, ROWS * TILE, 0.45)
     band(RIGHT, TOP, RIGHT - sh, TOP, sh, ROWS * TILE, 0.45)
     // Angles : trait diagonal façon mur « mitré » à 45°, du coin extérieur au coin intérieur.
-    c.strokeStyle = 'rgba(0,0,0,0.5)'
-    c.lineWidth = 1.5
+    c.strokeStyle = 'rgba(0,0,0,0.55)'
+    c.lineWidth = 3
     c.beginPath()
     c.moveTo(0, 0)
     c.lineTo(LEFT, TOP)
@@ -654,20 +654,56 @@ export class Game {
     c.strokeStyle = '#000'
     c.lineWidth = 2
     c.strokeRect(LEFT - 1, TOP - 1, COLS * TILE + 2, ROWS * TILE + 2)
-    // Portes
+    // Portes : cadre + panneau dégradé (façon double porte vitrée), cadenas si la salle n'est pas nettoyée.
     const open = this.room.cleared
+    const DOOR_TONES: Record<'boss' | 'treasure' | 'shop' | 'normal', [string, string]> = {
+      boss: ['#ff8aa4', '#b83a58'],
+      treasure: ['#ffe08a', '#c9a23a'],
+      shop: ['#c3f08a', '#6fae3c'],
+      normal: ['#4d84cf', '#0b1a3a'],
+    }
     const door = (x: number, y: number, w: number, h: number, d: Dir) => {
       if (!this.room.doors[d]) return
       const next = roomAt(this.floor, this.room.x + DIRS[d][0], this.room.y + DIRS[d][1])
-      c.fillStyle = next?.kind === 'boss' ? '#ff5a7a' : next?.kind === 'treasure' ? '#ffd35c' : next?.kind === 'shop' ? '#9be15d' : '#0b1a3a'
+      const [light, dark] = DOOR_TONES[next?.kind === 'boss' || next?.kind === 'treasure' || next?.kind === 'shop' ? next.kind : 'normal']
+      // Chambranle sombre, un peu plus large que l'ouverture.
+      c.fillStyle = 'rgba(0,0,0,0.45)'
+      c.fillRect(x - 1, y - 1, w + 2, h + 2)
+      // Panneau : dégradé façon vitre bombée, dans le sens de la plus grande dimension.
+      const grad = w >= h ? c.createLinearGradient(x, y, x, y + h) : c.createLinearGradient(x, y, x + w, y)
+      grad.addColorStop(0, light)
+      grad.addColorStop(1, dark)
+      c.fillStyle = grad
       c.fillRect(x, y, w, h)
+      // Reflet sur le bord éclairé + ligne de séparation façon porte double.
+      c.fillStyle = 'rgba(255,255,255,0.35)'
+      if (w >= h) c.fillRect(x, y, w, 2)
+      else c.fillRect(x, y, 2, h)
+      c.strokeStyle = 'rgba(0,0,0,0.35)'
+      c.lineWidth = 1
+      c.beginPath()
+      if (w >= h) {
+        c.moveTo(x + w / 2, y)
+        c.lineTo(x + w / 2, y + h)
+      } else {
+        c.moveTo(x, y + h / 2)
+        c.lineTo(x + w, y + h / 2)
+      }
+      c.stroke()
       if (!open) {
-        c.fillStyle = '#bfe8ff'
-        for (let i = 0; i < 3; i++) {
-          c.beginPath()
-          c.arc(x + w / 2 + (w > h ? (i - 1) * 7 : 0), y + h / 2 + (h > w ? (i - 1) * 7 : 0), 3, 0, Math.PI * 2)
-          c.fill()
-        }
+        const lx = x + w / 2
+        const ly = y + h / 2
+        c.strokeStyle = '#eaf5ff'
+        c.lineWidth = 1.5
+        c.beginPath()
+        c.arc(lx, ly - 2, 2.5, Math.PI, 0)
+        c.stroke()
+        c.fillStyle = '#eaf5ff'
+        c.fillRect(lx - 4, ly - 2, 8, 6)
+        c.fillStyle = dark
+        c.beginPath()
+        c.arc(lx, ly + 1, 1, 0, Math.PI * 2)
+        c.fill()
       }
     }
     door(CX - TILE / 2, 2, TILE, TOP - 2, 'up')

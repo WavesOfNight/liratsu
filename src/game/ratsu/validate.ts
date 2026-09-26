@@ -9,7 +9,7 @@ export type ScoreRules = { maxFloors: number; maxScorePerSecond: number }
 /** Score maximal théorique d'après les stats déclarées (voir game.ts pour les barèmes). */
 export function theoreticalMax(c: ScoreClaim): number {
   const boss = c.floor * 500
-  const coinsUpper = c.kills * 5 + c.rooms * 5 // au plus ~1 coquillage par ennemi + salle
+  const coinsUpper = c.kills * 5 + c.rooms * 5 // au plus ~1 pièce par ennemi + salle
   return c.kills * 10 + c.rooms * 25 + (c.floor - 1) * 200 + boss + coinsUpper + (c.won ? 1600 : 0)
 }
 
