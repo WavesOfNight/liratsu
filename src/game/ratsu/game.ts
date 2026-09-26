@@ -579,7 +579,7 @@ export class Game {
       t = tileCanvas(img, TILE)
       const wctx = t.getContext('2d')!
       wctx.globalCompositeOperation = 'source-atop'
-      wctx.fillStyle = 'rgba(0,0,0,0.55)'
+      wctx.fillStyle = 'rgba(0,0,0,0.3)'
       wctx.fillRect(0, 0, TILE, TILE)
       this.wallTiles.set(img, t)
     }
@@ -617,7 +617,7 @@ export class Game {
       c.fillRect(0, 0, LEFT, H)
       c.fillRect(RIGHT, 0, TILE, H)
     }
-    c.fillStyle = this.room.kind === 'boss' ? 'rgba(58,29,92,0.55)' : this.room.kind === 'shop' ? 'rgba(26,111,92,0.5)' : 'rgba(18,60,114,0.55)'
+    c.fillStyle = this.room.kind === 'boss' ? 'rgba(58,29,92,0.32)' : this.room.kind === 'shop' ? 'rgba(26,111,92,0.28)' : 'rgba(18,60,114,0.32)'
     c.fillRect(0, 0, W, TOP)
     c.fillRect(0, BOTTOM, W, TILE)
     c.fillRect(0, 0, LEFT, H)
@@ -635,10 +635,23 @@ export class Game {
     band(LEFT, BOTTOM, LEFT, BOTTOM - sh, COLS * TILE, sh, 0.35)
     band(LEFT, TOP, LEFT + sh, TOP, sh, ROWS * TILE, 0.45)
     band(RIGHT, TOP, RIGHT - sh, TOP, sh, ROWS * TILE, 0.45)
+    // Angles : trait diagonal façon mur « mitré » à 45°, du coin extérieur au coin intérieur.
+    c.strokeStyle = 'rgba(0,0,0,0.5)'
+    c.lineWidth = 1.5
+    c.beginPath()
+    c.moveTo(0, 0)
+    c.lineTo(LEFT, TOP)
+    c.moveTo(W, 0)
+    c.lineTo(RIGHT, TOP)
+    c.moveTo(0, H)
+    c.lineTo(LEFT, BOTTOM)
+    c.moveTo(W, H)
+    c.lineTo(RIGHT, BOTTOM)
+    c.stroke()
     // Reflet vitré (esthétique verre conservée) + liseré.
     c.fillStyle = 'rgba(255,255,255,0.18)'
     c.fillRect(0, 0, W, 4)
-    c.strokeStyle = '#bfe8ff'
+    c.strokeStyle = '#000'
     c.lineWidth = 2
     c.strokeRect(LEFT - 1, TOP - 1, COLS * TILE + 2, ROWS * TILE + 2)
     // Portes
