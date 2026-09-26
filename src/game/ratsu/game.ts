@@ -658,17 +658,22 @@ export class Game {
     const open = this.room.cleared
     const DOOR_TONES: Record<'boss' | 'treasure' | 'shop' | 'normal', [string, string]> = {
       boss: ['#ff8aa4', '#b83a58'],
-      treasure: ['#ffe08a', '#c9a23a'],
-      shop: ['#c3f08a', '#6fae3c'],
-      normal: ['#4d84cf', '#0b1a3a'],
+      treasure: ['#ffd966', '#8a6a1a'],
+      shop: ['#e2915a', '#7a3b16'],
+      normal: ['#2b2b2b', '#000000'],
     }
     const door = (x: number, y: number, w: number, h: number, d: Dir) => {
       if (!this.room.doors[d]) return
       const next = roomAt(this.floor, this.room.x + DIRS[d][0], this.room.y + DIRS[d][1])
       const [light, dark] = DOOR_TONES[next?.kind === 'boss' || next?.kind === 'treasure' || next?.kind === 'shop' ? next.kind : 'normal']
-      // Chambranle sombre, un peu plus large que l'ouverture.
-      c.fillStyle = 'rgba(0,0,0,0.45)'
-      c.fillRect(x - 1, y - 1, w + 2, h + 2)
+      // Encadrement « bois » : la texture du mur, encore assombrie, un peu plus large que l'ouverture.
+      const frame = 3
+      if (wallPat) {
+        c.fillStyle = wallPat
+        c.fillRect(x - frame, y - frame, w + frame * 2, h + frame * 2)
+      }
+      c.fillStyle = 'rgba(0,0,0,0.5)'
+      c.fillRect(x - frame, y - frame, w + frame * 2, h + frame * 2)
       // Panneau : dégradé façon vitre bombée, dans le sens de la plus grande dimension.
       const grad = w >= h ? c.createLinearGradient(x, y, x, y + h) : c.createLinearGradient(x, y, x + w, y)
       grad.addColorStop(0, light)
